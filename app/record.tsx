@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -26,7 +26,8 @@ const showAlert = (title: string, message: string) => {
 // ========================================
 
 export default function RecordScreen() {
-  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const params = useLocalSearchParams<{ date?: string }>();
+  const today = params.date || new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
   // 상태 관리
   const [moodUp, setMoodUp] = useState<number | null>(null);
