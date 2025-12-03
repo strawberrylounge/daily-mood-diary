@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Loading from "../components/Loading";
 import { supabase } from "../lib/supabase";
 import type { DailyRecord } from "../types/database";
 import { Colors } from "../constants/theme";
@@ -149,11 +150,7 @@ export default function HistoryScreen() {
   );
 
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>로딩 중...</Text>
-      </View>
-    );
+    return <Loading message="기록을 불러오는 중..." />;
   }
 
   return (

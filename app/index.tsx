@@ -1,13 +1,8 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
+import Loading from "../components/Loading";
 import { Colors } from "../constants/theme";
 import { supabase } from "../lib/supabase";
 
@@ -86,12 +81,7 @@ export default function Index() {
   };
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
-        <Text style={styles.loadingText}>로딩 중...</Text>
-      </View>
-    );
+    return <Loading message="불러오는 중..." />;
   }
 
   return (
@@ -104,9 +94,8 @@ export default function Index() {
         markedDates={markedDates}
         maxDate={today}
         theme={{
-          todayTextColor: Colors.light.error,
-          selectedDayBackgroundColor: Colors.light.success,
-          selectedDayTextColor: "#ffffff",
+          todayBackgroundColor: Colors.light.success,
+          todayTextColor: "#fff",
           arrowColor: Colors.light.primaryDark,
           monthTextColor: Colors.light.text,
           textMonthFontSize: 18,
@@ -136,12 +125,6 @@ export default function Index() {
               { backgroundColor: Colors.light.success },
             ]}
           />
-          <Text style={styles.legendText}>선택됨</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View
-            style={[styles.legendDot, { backgroundColor: Colors.light.error }]}
-          />
           <Text style={styles.legendText}>오늘</Text>
         </View>
       </View>
@@ -161,17 +144,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: Colors.light.background,
-  },
-  loadingContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: Colors.light.textSecondary,
   },
   title: {
     marginTop: 20,

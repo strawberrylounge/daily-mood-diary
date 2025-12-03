@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
 
@@ -167,12 +168,54 @@ export default function EditScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm("정말로 이 기록을 삭제하시겠습니까?");
+      if (confirmed) {
+        deleteRecord();
+      }
+    } else {
+      Alert.alert(
+        "삭제 확인",
+        "정말로 이 기록을 삭제하시겠습니까?",
+        [
+          {
+            text: "취소",
+            style: "cancel",
+          },
+          {
+            text: "삭제",
+            style: "destructive",
+            onPress: deleteRecord,
+          },
+        ],
+        { cancelable: true }
+      );
+    }
+  };
+
+  const deleteRecord = async () => {
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from("daily_records")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      showAlert("성공", "기록이 삭제되었습니다!");
+      router.back();
+    } catch (error: any) {
+      showAlert("오류", error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>로딩 중...</Text>
-      </View>
-    );
+    return <Loading />;
   }
 
   return (
@@ -436,6 +479,15 @@ export default function EditScreen() {
           {saving ? "저장 중..." : "수정 완료"}
         </Text>
       </TouchableOpacity>
+
+      {/* 삭제 버튼 */}
+      <TouchableOpacity
+        style={[styles.deleteButton, saving && styles.deleteButtonDisabled]}
+        onPress={handleDelete}
+        disabled={saving}
+      >
+        <Text style={styles.deleteButtonText}>삭제하기</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -531,12 +583,27 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 12,
   },
   saveButtonDisabled: {
     backgroundColor: Colors.light.border,
   },
   saveButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  deleteButton: {
+    backgroundColor: Colors.light.error,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  deleteButtonDisabled: {
+    backgroundColor: Colors.light.border,
+  },
+  deleteButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
