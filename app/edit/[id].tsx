@@ -1,3 +1,4 @@
+import Slider from "@react-native-community/slider";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -11,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Colors } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
 
 // ========================================
@@ -33,15 +35,15 @@ export default function EditScreen() {
 
   // 기존 데이터
   const [recordDate, setRecordDate] = useState("");
-  const [moodUp, setMoodUp] = useState<number | null>(null);
-  const [moodDown, setMoodDown] = useState<number | null>(null);
-  const [anxiety, setAnxiety] = useState(0);
-  const [tension, setTension] = useState(0);
-  const [anger, setAnger] = useState(0);
-  const [interest, setInterest] = useState(0);
-  const [activity, setActivity] = useState(0);
-  const [thoughtSpeed, setThoughtSpeed] = useState(0);
-  const [thoughtContent, setThoughtContent] = useState(0);
+  const [selectedMoods, setSelectedMoods] = useState<number[]>([]);
+  // 음수를 처리 하지 못하는 라이브러리 버그로 0이 -4, 8이 4
+  const [anxiety, setAnxiety] = useState(4);
+  const [tension, setTension] = useState(4);
+  const [anger, setAnger] = useState(4);
+  const [interest, setInterest] = useState(4);
+  const [activity, setActivity] = useState(4);
+  const [thoughtSpeed, setThoughtSpeed] = useState(4);
+  const [thoughtContent, setThoughtContent] = useState(4);
   const [sleepHours, setSleepHours] = useState("");
   const [weight, setWeight] = useState("");
   const [hasMenstruation, setHasMenstruation] = useState(false);
@@ -55,6 +57,22 @@ export default function EditScreen() {
     fetchRecord();
   }, [id]);
 
+  // 슬라이드 값 변환 함수
+  const convertToDisplay = (value: number) => value - 4; // 0~8 -> -4~4
+  const convertFromDisplay = (value: number) => value + 4; // -4~4 -> 0~8
+
+  // 기분 버튼 클릭 핸들러
+  const handleMoodPress = (value: number) => {
+    if (selectedMoods.includes(value)) {
+      // 이미 선택된 경우 제거
+      setSelectedMoods(selectedMoods.filter((mood) => mood !== value));
+    } else if (selectedMoods.length < 2) {
+      // 2개 미만인 경우 추가
+      setSelectedMoods([...selectedMoods, value]);
+    }
+    // 2개 이상이면 무시
+  };
+
   const fetchRecord = async () => {
     try {
       const { data, error } = await supabase
@@ -67,8 +85,13 @@ export default function EditScreen() {
 
       // 데이터 채우기
       setRecordDate(data.record_date);
-      setMoodUp(data.mood_up_score);
-      setMoodDown(data.mood_down_score);
+
+      // 기분 점수를 배열로 변환
+      const moods: number[] = [];
+      if (data.mood_up_score !== null) moods.push(data.mood_up_score);
+      if (data.mood_down_score !== null) moods.push(data.mood_down_score);
+      setSelectedMoods(moods);
+
       setAnxiety(data.anxiety_score);
       setTension(data.tension_score);
       setAnger(data.anger_score);
@@ -103,18 +126,22 @@ export default function EditScreen() {
     setSaving(true);
 
     try {
+      // 기분 점수 계산: 양수/0은 mood_up_score, 음수는 mood_down_score
+      const moodUpValues = selectedMoods.filter((m) => m >= 0);
+      const moodDownValues = selectedMoods.filter((m) => m < 0);
+
       const { error } = await supabase
         .from("daily_records")
         .update({
-          mood_up_score: moodUp,
-          mood_down_score: moodDown,
-          anxiety_score: anxiety,
-          tension_score: tension,
-          anger_score: anger,
-          interest_score: interest,
-          activity_score: activity,
-          thought_speed_score: thoughtSpeed,
-          thought_content_score: thoughtContent,
+          mood_up_score: moodUpValues.length > 0 ? moodUpValues[0] : null,
+          mood_down_score: moodDownValues.length > 0 ? moodDownValues[0] : null,
+          anxiety_score: convertFromDisplay(anxiety),
+          tension_score: convertFromDisplay(tension),
+          anger_score: convertFromDisplay(anger),
+          interest_score: convertFromDisplay(interest),
+          activity_score: convertFromDisplay(activity),
+          thought_speed_score: convertFromDisplay(thoughtSpeed),
+          thought_content_score: convertFromDisplay(thoughtContent),
           sleep_hours: parseFloat(sleepHours),
           weight: weight ? parseFloat(weight) : null,
           has_menstruation: hasMenstruation,
@@ -153,48 +180,23 @@ export default function EditScreen() {
       <Text style={styles.title}>기분 기록 수정</Text>
       <Text style={styles.date}>{recordDate}</Text>
 
-      {/* 기분 Up/Down */}
+      {/* 기분 */}
       <View style={styles.section}>
-        <Text style={styles.label}>기분 Up (0~4)</Text>
+        <Text style={styles.label}>기분 (최대 2개 선택)</Text>
         <View style={styles.buttonRow}>
-          {[0, 1, 2, 3, 4].map((val) => (
+          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
             <TouchableOpacity
               key={val}
               style={[
                 styles.scoreButton,
-                moodUp === val && styles.scoreButtonActive,
+                selectedMoods.includes(val) && styles.scoreButtonActive,
               ]}
-              onPress={() => setMoodUp(val)}
+              onPress={() => handleMoodPress(val)}
             >
               <Text
                 style={[
                   styles.scoreButtonText,
-                  moodUp === val && styles.scoreButtonTextActive,
-                ]}
-              >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>기분 Down (-4~-1)</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                moodDown === val && styles.scoreButtonActive,
-              ]}
-              onPress={() => setMoodDown(val)}
-            >
-              <Text
-                style={[
-                  styles.scoreButtonText,
-                  moodDown === val && styles.scoreButtonTextActive,
+                  selectedMoods.includes(val) && styles.scoreButtonTextActive,
                 ]}
               >
                 {val}
@@ -206,183 +208,154 @@ export default function EditScreen() {
 
       {/* 불안 점수 */}
       <View style={styles.section}>
-        <Text style={styles.label}>불안 (-4~4) *</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                anxiety === val && styles.scoreButtonActive,
-              ]}
-              onPress={() => setAnxiety(val)}
-            >
-              <Text
-                style={[
-                  styles.scoreButtonText,
-                  anxiety === val && styles.scoreButtonTextActive,
-                ]}
-              >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <Text style={styles.label}>불안: {convertToDisplay(anxiety)}</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={8}
+          step={1}
+          value={anxiety}
+          onValueChange={setAnxiety}
+          minimumTrackTintColor={Colors.light.primary}
+          maximumTrackTintColor={Colors.light.border}
+          thumbTintColor={Colors.light.primary}
+        />
+        <View style={styles.sliderLabels}>
+          <Text style={styles.sliderLabelText}>-4</Text>
+          <Text style={styles.sliderLabelText}>0</Text>
+          <Text style={styles.sliderLabelText}>4</Text>
         </View>
       </View>
 
       {/* 긴장/흥분 점수 */}
       <View style={styles.section}>
-        <Text style={styles.label}>긴장/흥분 (-4~4) *</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                tension === val && styles.scoreButtonActive,
-              ]}
-              onPress={() => setTension(val)}
-            >
-              <Text
-                style={[
-                  styles.scoreButtonText,
-                  tension === val && styles.scoreButtonTextActive,
-                ]}
-              >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <Text style={styles.label}>긴장/흥분: {convertToDisplay(tension)}</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={8}
+          step={1}
+          value={tension}
+          onValueChange={setTension}
+          minimumTrackTintColor={Colors.light.primary}
+          maximumTrackTintColor={Colors.light.border}
+          thumbTintColor={Colors.light.primary}
+        />
+        <View style={styles.sliderLabels}>
+          <Text style={styles.sliderLabelText}>-4</Text>
+          <Text style={styles.sliderLabelText}>0</Text>
+          <Text style={styles.sliderLabelText}>4</Text>
         </View>
       </View>
 
       {/* 짜증/분노 점수 */}
       <View style={styles.section}>
-        <Text style={styles.label}>짜증/분노 (-4~4) *</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                anger === val && styles.scoreButtonActive,
-              ]}
-              onPress={() => setAnger(val)}
-            >
-              <Text
-                style={[
-                  styles.scoreButtonText,
-                  anger === val && styles.scoreButtonTextActive,
-                ]}
-              >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <Text style={styles.label}>짜증/분노: {convertToDisplay(anger)}</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={8}
+          step={1}
+          value={anger}
+          onValueChange={setAnger}
+          minimumTrackTintColor={Colors.light.primary}
+          maximumTrackTintColor={Colors.light.border}
+          thumbTintColor={Colors.light.primary}
+        />
+        <View style={styles.sliderLabels}>
+          <Text style={styles.sliderLabelText}>-4</Text>
+          <Text style={styles.sliderLabelText}>0</Text>
+          <Text style={styles.sliderLabelText}>4</Text>
         </View>
       </View>
 
       {/* 관심/흥미 점수 */}
       <View style={styles.section}>
-        <Text style={styles.label}>관심/흥미 (-4~4) *</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                interest === val && styles.scoreButtonActive,
-              ]}
-              onPress={() => setInterest(val)}
-            >
-              <Text
-                style={[
-                  styles.scoreButtonText,
-                  interest === val && styles.scoreButtonTextActive,
-                ]}
-              >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <Text style={styles.label}>
+          관심/흥미: {convertToDisplay(interest)}
+        </Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={8}
+          step={1}
+          value={interest}
+          onValueChange={setInterest}
+          minimumTrackTintColor={Colors.light.primary}
+          maximumTrackTintColor={Colors.light.border}
+          thumbTintColor={Colors.light.primary}
+        />
+        <View style={styles.sliderLabels}>
+          <Text style={styles.sliderLabelText}>-4</Text>
+          <Text style={styles.sliderLabelText}>0</Text>
+          <Text style={styles.sliderLabelText}>4</Text>
         </View>
       </View>
 
       {/* 활동량 점수 */}
       <View style={styles.section}>
-        <Text style={styles.label}>활동량 (-4~4) *</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                activity === val && styles.scoreButtonActive,
-              ]}
-              onPress={() => setActivity(val)}
-            >
-              <Text
-                style={[
-                  styles.scoreButtonText,
-                  activity === val && styles.scoreButtonTextActive,
-                ]}
-              >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <Text style={styles.label}>활동량: {convertToDisplay(activity)}</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={8}
+          step={1}
+          value={activity}
+          onValueChange={setActivity}
+          minimumTrackTintColor={Colors.light.primary}
+          maximumTrackTintColor={Colors.light.border}
+          thumbTintColor={Colors.light.primary}
+        />
+        <View style={styles.sliderLabels}>
+          <Text style={styles.sliderLabelText}>-4</Text>
+          <Text style={styles.sliderLabelText}>0</Text>
+          <Text style={styles.sliderLabelText}>4</Text>
         </View>
       </View>
 
       {/* 생각의 속도 점수 */}
       <View style={styles.section}>
-        <Text style={styles.label}>생각의 속도/양 (-4~4) *</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                thoughtSpeed === val && styles.scoreButtonActive,
-              ]}
-              onPress={() => setThoughtSpeed(val)}
-            >
-              <Text
-                style={[
-                  styles.scoreButtonText,
-                  thoughtSpeed === val && styles.scoreButtonTextActive,
-                ]}
-              >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <Text style={styles.label}>
+          생각의 속도/양: {convertToDisplay(thoughtSpeed)}
+        </Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={8}
+          step={1}
+          value={thoughtSpeed}
+          onValueChange={setThoughtSpeed}
+          minimumTrackTintColor={Colors.light.primary}
+          maximumTrackTintColor={Colors.light.border}
+          thumbTintColor={Colors.light.primary}
+        />
+        <View style={styles.sliderLabels}>
+          <Text style={styles.sliderLabelText}>-4</Text>
+          <Text style={styles.sliderLabelText}>0</Text>
+          <Text style={styles.sliderLabelText}>4</Text>
         </View>
       </View>
 
       {/* 생각의 내용 점수 */}
       <View style={styles.section}>
-        <Text style={styles.label}>생각의 내용 (-4~4) *</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                thoughtContent === val && styles.scoreButtonActive,
-              ]}
-              onPress={() => setThoughtContent(val)}
-            >
-              <Text
-                style={[
-                  styles.scoreButtonText,
-                  thoughtContent === val && styles.scoreButtonTextActive,
-                ]}
-              >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <Text style={styles.label}>
+          생각의 내용: {convertToDisplay(thoughtContent)}
+        </Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={8}
+          step={1}
+          value={thoughtContent}
+          onValueChange={setThoughtContent}
+          minimumTrackTintColor={Colors.light.primary}
+          maximumTrackTintColor={Colors.light.border}
+          thumbTintColor={Colors.light.primary}
+        />
+        <View style={styles.sliderLabels}>
+          <Text style={styles.sliderLabelText}>-4</Text>
+          <Text style={styles.sliderLabelText}>0</Text>
+          <Text style={styles.sliderLabelText}>4</Text>
         </View>
       </View>
 
@@ -470,17 +443,18 @@ export default function EditScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.surface,
     padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 8,
+    color: Colors.light.text,
   },
   date: {
     fontSize: 16,
-    color: "#666",
+    color: Colors.light.textSecondary,
     marginBottom: 24,
   },
   section: {
@@ -490,6 +464,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 8,
+    color: Colors.light.text,
+  },
+  slider: {
+    width: "100%",
+    height: 40,
+  },
+  sliderLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    marginTop: -5,
+  },
+  sliderLabelText: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   buttonRow: {
     flexDirection: "row",
@@ -497,20 +486,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   scoreButton: {
-    paddingHorizontal: 16,
+    minWidth: 48,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.surface,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scoreButtonActive: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   scoreButtonText: {
     fontSize: 14,
-    color: "#000",
+    color: Colors.light.text,
   },
   scoreButtonTextActive: {
     color: "#fff",
@@ -518,24 +510,31 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: Colors.light.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: Colors.light.text,
   },
   textArea: {
     height: 100,
     textAlignVertical: "top",
   },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
   saveButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.light.primary,
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 40,
   },
   saveButtonDisabled: {
-    backgroundColor: "#ccc",
+    backgroundColor: Colors.light.border,
   },
   saveButtonText: {
     color: "#fff",
