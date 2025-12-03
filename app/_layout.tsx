@@ -5,18 +5,16 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="record" options={{ title: '기록 작성' }} />
+        <Stack.Screen name="edit/[id]" options={{ title: '기록 수정' }} />
+        <Stack.Screen name="history" options={{ title: '전체 기록' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

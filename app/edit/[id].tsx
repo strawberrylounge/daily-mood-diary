@@ -118,6 +118,12 @@ export default function EditScreen() {
   };
 
   const handleUpdate = async () => {
+    // 유효성 검사
+    if (selectedMoods.length === 0) {
+      showAlert("오류", "기분을 최소 1개 이상 선택해주세요.");
+      return;
+    }
+
     if (!sleepHours || parseFloat(sleepHours) <= 0) {
       // Alert.alert("오류", "수면 시간을 입력해주세요."); // 웹 호환 전
       showAlert("오류", "수면 시간을 입력해주세요."); // 웹 호환
