@@ -1,10 +1,10 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
-import Loading from "../components/Loading";
-import { Colors } from "../constants/theme";
-import { supabase } from "../lib/supabase";
+import Loading from "../../components/Loading";
+import { Colors } from "../../constants/theme";
+import { supabase } from "../../lib/supabase";
 
 export default function Index() {
   const [recordedDates, setRecordedDates] = useState<{ [key: string]: any }>(
@@ -87,7 +87,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Mood Tracker</Text>
-      <Text style={styles.subtitle}>날짜를 선택해서 기록하세요!</Text>
+      <Text style={styles.subtitle}>오늘의 상태를 기록하세요.</Text>
 
       <Calendar
         onDayPress={handleDayPress}
@@ -132,13 +132,6 @@ export default function Index() {
           <Text style={styles.legendText}>오늘</Text>
         </View>
       </View>
-
-      <TouchableOpacity
-        style={styles.historyButton}
-        onPress={() => router.push("/history")}
-      >
-        <Text style={styles.historyButtonText}>전체 기록 보기</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -197,18 +190,5 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 14,
     color: Colors.light.textSecondary,
-  },
-  historyButton: {
-    backgroundColor: Colors.light.surface,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  historyButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.text,
   },
 });

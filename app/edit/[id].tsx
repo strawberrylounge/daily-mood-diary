@@ -33,6 +33,7 @@ export default function EditScreen() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // 기존 데이터
   const [recordDate, setRecordDate] = useState("");
@@ -64,6 +65,8 @@ export default function EditScreen() {
 
   // 기분 버튼 클릭 핸들러
   const handleMoodPress = (value: number) => {
+    if (!isEditMode) return; // 수정 모드가 아니면 무시
+
     if (selectedMoods.includes(value)) {
       // 이미 선택된 경우 제거
       setSelectedMoods(selectedMoods.filter((mood) => mood !== value));
@@ -109,8 +112,7 @@ export default function EditScreen() {
       setAlcoholAmount(data.has_alcohol.toString());
       setNotes(data.notes || "");
     } catch (error: any) {
-      // Alert.alert("오류", error.message); // 웹 호환 전
-      showAlert("오류", error.message); // 웹 호환
+      showAlert("오류", error.message);
       router.back();
     } finally {
       setLoading(false);
@@ -125,8 +127,7 @@ export default function EditScreen() {
     }
 
     if (!sleepHours || parseFloat(sleepHours) <= 0) {
-      // Alert.alert("오류", "수면 시간을 입력해주세요."); // 웹 호환 전
-      showAlert("오류", "수면 시간을 입력해주세요."); // 웹 호환
+      showAlert("오류", "수면 시간을 입력해주세요.");
       return;
     }
 
@@ -163,12 +164,10 @@ export default function EditScreen() {
 
       if (error) throw error;
 
-      // Alert.alert("성공", "기록이 수정되었습니다!"); // 웹 호환 전
-      showAlert("성공", "기록이 수정되었습니다!"); // 웹 호환
-      router.back();
+      showAlert("성공", "기록이 수정되었습니다!");
+      setIsEditMode(false); // 수정 모드 종료
     } catch (error: any) {
-      // Alert.alert("오류", error.message); // 웹 호환 전
-      showAlert("오류", error.message); // 웹 호환
+      showAlert("오류", error.message);
     } finally {
       setSaving(false);
     }
@@ -224,6 +223,131 @@ export default function EditScreen() {
     return <Loading />;
   }
 
+  // 읽기 모드 UI
+  if (!isEditMode) {
+    return (
+      <ScrollView style={styles.container}>
+        <Text style={styles.title}>기분 기록</Text>
+        <Text style={styles.date}>{recordDate}</Text>
+
+        <View style={styles.readOnlyCard}>
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>기분</Text>
+            <Text style={styles.readOnlyValue}>
+              {selectedMoods.join(", ")}
+            </Text>
+          </View>
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>불안</Text>
+            <Text style={styles.readOnlyValue}>{convertToDisplay(anxiety)}</Text>
+          </View>
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>긴장/흥분</Text>
+            <Text style={styles.readOnlyValue}>{convertToDisplay(tension)}</Text>
+          </View>
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>짜증/분노</Text>
+            <Text style={styles.readOnlyValue}>{convertToDisplay(anger)}</Text>
+          </View>
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>관심/흥미</Text>
+            <Text style={styles.readOnlyValue}>
+              {convertToDisplay(interest)}
+            </Text>
+          </View>
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>활동량</Text>
+            <Text style={styles.readOnlyValue}>
+              {convertToDisplay(activity)}
+            </Text>
+          </View>
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>생각의 속도/양</Text>
+            <Text style={styles.readOnlyValue}>
+              {convertToDisplay(thoughtSpeed)}
+            </Text>
+          </View>
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>생각의 내용</Text>
+            <Text style={styles.readOnlyValue}>
+              {convertToDisplay(thoughtContent)}
+            </Text>
+          </View>
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>수면 시간</Text>
+            <Text style={styles.readOnlyValue}>{sleepHours}시간</Text>
+          </View>
+
+          {weight && (
+            <View style={styles.readOnlySection}>
+              <Text style={styles.readOnlyLabel}>체중</Text>
+              <Text style={styles.readOnlyValue}>{weight}kg</Text>
+            </View>
+          )}
+
+          <View style={styles.readOnlySection}>
+            <Text style={styles.readOnlyLabel}>음주</Text>
+            <Text style={styles.readOnlyValue}>{alcoholAmount}잔</Text>
+          </View>
+
+          {(hasMenstruation ||
+            hasBingeEating ||
+            hasPhysicalPain ||
+            hasPanicAttack) && (
+            <View style={styles.readOnlySection}>
+              <Text style={styles.readOnlyLabel}>특이사항</Text>
+              <View style={styles.booleanTags}>
+                {hasMenstruation && (
+                  <Text style={styles.booleanTag}>생리</Text>
+                )}
+                {hasBingeEating && (
+                  <Text style={styles.booleanTag}>폭식</Text>
+                )}
+                {hasPhysicalPain && (
+                  <Text style={styles.booleanTag}>신체 통증</Text>
+                )}
+                {hasPanicAttack && (
+                  <Text style={styles.booleanTag}>공황 발작</Text>
+                )}
+              </View>
+            </View>
+          )}
+
+          {notes && (
+            <View style={styles.readOnlySection}>
+              <Text style={styles.readOnlyLabel}>메모</Text>
+              <Text style={styles.readOnlyValue}>{notes}</Text>
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => setIsEditMode(true)}
+        >
+          <Text style={styles.editButtonText}>수정하기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.deleteButton, saving && styles.deleteButtonDisabled]}
+          onPress={handleDelete}
+          disabled={saving}
+        >
+          <Text style={styles.deleteButtonText}>삭제하기</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  }
+
+  // 수정 모드 UI
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>기분 기록 수정</Text>
@@ -475,7 +599,7 @@ export default function EditScreen() {
         />
       </View>
 
-      {/* 저장 버튼 */}
+      {/* 수정완료 버튼 */}
       <TouchableOpacity
         style={[styles.saveButton, saving && styles.saveButtonDisabled]}
         onPress={handleUpdate}
@@ -486,13 +610,12 @@ export default function EditScreen() {
         </Text>
       </TouchableOpacity>
 
-      {/* 삭제 버튼 */}
+      {/* 취소 버튼 */}
       <TouchableOpacity
-        style={[styles.deleteButton, saving && styles.deleteButtonDisabled]}
-        onPress={handleDelete}
-        disabled={saving}
+        style={styles.cancelButton}
+        onPress={() => setIsEditMode(false)}
       >
-        <Text style={styles.deleteButtonText}>삭제하기</Text>
+        <Text style={styles.cancelButtonText}>취소</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -515,6 +638,57 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     marginBottom: 24,
   },
+  // 읽기 모드 스타일
+  readOnlyCard: {
+    backgroundColor: Colors.light.background,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  readOnlySection: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  readOnlyLabel: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    marginBottom: 4,
+  },
+  readOnlyValue: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.light.text,
+  },
+  booleanTags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  booleanTag: {
+    backgroundColor: Colors.light.primary,
+    color: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  editButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  editButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  // 수정 모드 스타일
   section: {
     marginBottom: 24,
   },
@@ -596,6 +770,20 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  cancelButton: {
+    backgroundColor: Colors.light.surface,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginBottom: 12,
+  },
+  cancelButtonText: {
+    color: Colors.light.text,
     fontSize: 18,
     fontWeight: "600",
   },
