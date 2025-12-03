@@ -100,7 +100,11 @@ export default function Index() {
           monthTextColor: Colors.light.text,
           textMonthFontSize: 18,
           textMonthFontWeight: "bold",
-          dotColor: Colors.light.primary,
+          textDayFontSize: 16,
+          dotStyle: {
+            marginTop: 10,
+            color: Colors.light.primary,
+          },
         }}
         renderArrow={(direction) => (
           <Text style={styles.arrow}>{direction === "left" ? "◀" : "▶"}</Text>
@@ -160,6 +164,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   calendar: {
+    padding: 16,
     borderRadius: 12,
     elevation: 4,
     shadowColor: "#000",
@@ -176,7 +181,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 20,
-    marginTop: 24,
+    marginTop: 20,
     marginBottom: 20,
   },
   legendItem: {
