@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -11,6 +12,18 @@ import {
   View,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
+
+// ========================================
+// 웹 호환 코드 (나중에 삭제 예정)
+// ========================================
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === "web") {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
+// ========================================
 
 export default function EditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -72,7 +85,8 @@ export default function EditScreen() {
       setAlcoholAmount(data.has_alcohol.toString());
       setNotes(data.notes || "");
     } catch (error: any) {
-      Alert.alert("오류", error.message);
+      // Alert.alert("오류", error.message); // 웹 호환 전
+      showAlert("오류", error.message); // 웹 호환
       router.back();
     } finally {
       setLoading(false);
@@ -81,7 +95,8 @@ export default function EditScreen() {
 
   const handleUpdate = async () => {
     if (!sleepHours || parseFloat(sleepHours) <= 0) {
-      Alert.alert("오류", "수면 시간을 입력해주세요.");
+      // Alert.alert("오류", "수면 시간을 입력해주세요."); // 웹 호환 전
+      showAlert("오류", "수면 시간을 입력해주세요."); // 웹 호환
       return;
     }
 
@@ -114,10 +129,12 @@ export default function EditScreen() {
 
       if (error) throw error;
 
-      Alert.alert("성공", "기록이 수정되었습니다!");
+      // Alert.alert("성공", "기록이 수정되었습니다!"); // 웹 호환 전
+      showAlert("성공", "기록이 수정되었습니다!"); // 웹 호환
       router.back();
     } catch (error: any) {
-      Alert.alert("오류", error.message);
+      // Alert.alert("오류", error.message); // 웹 호환 전
+      showAlert("오류", error.message); // 웹 호환
     } finally {
       setSaving(false);
     }

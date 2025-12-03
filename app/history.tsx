@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -10,6 +11,35 @@ import {
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import type { DailyRecord } from "../types/database";
+
+// ========================================
+// 웹 호환 코드 (나중에 삭제 예정)
+// ========================================
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === "web") {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
+
+const showConfirm = (
+  title: string,
+  message: string,
+  onConfirm: () => void
+) => {
+  if (Platform.OS === "web") {
+    if (window.confirm(`${title}\n\n${message}`)) {
+      onConfirm();
+    }
+  } else {
+    Alert.alert(title, message, [
+      { text: "취소", style: "cancel" },
+      { text: "삭제", style: "destructive", onPress: onConfirm },
+    ]);
+  }
+};
+// ========================================
 
 export default function HistoryScreen() {
   const [records, setRecords] = useState<DailyRecord[]>([]);
@@ -30,35 +60,53 @@ export default function HistoryScreen() {
       if (error) throw error;
       setRecords(data || []);
     } catch (error: any) {
-      Alert.alert("오류", error.message);
+      // Alert.alert("오류", error.message); // 웹 호환 전
+      showAlert("오류", error.message); // 웹 호환
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string, date: string) => {
-    Alert.alert("삭제 확인", `${date} 기록을 삭제하시겠습니까?`, [
-      { text: "취소", style: "cancel" },
-      {
-        text: "삭제",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const { error } = await supabase
-              .from("daily_records")
-              .delete()
-              .eq("id", id);
+    // ======== 웹 호환 전 코드 ========
+    // Alert.alert("삭제 확인", `${date} 기록을 삭제하시겠습니까?`, [
+    //   { text: "취소", style: "cancel" },
+    //   {
+    //     text: "삭제",
+    //     style: "destructive",
+    //     onPress: async () => {
+    //       try {
+    //         const { error } = await supabase
+    //           .from("daily_records")
+    //           .delete()
+    //           .eq("id", id);
+    //
+    //         if (error) throw error;
+    //
+    //         Alert.alert("성공", "기록이 삭제되었습니다.");
+    //         fetchRecords(); // 목록 새로고침
+    //       } catch (error: any) {
+    //         Alert.alert("오류", error.message);
+    //       }
+    //     },
+    //   },
+    // ]);
+    // ======== 웹 호환 코드 ========
+    showConfirm("삭제 확인", `${date} 기록을 삭제하시겠습니까?`, async () => {
+      try {
+        const { error } = await supabase
+          .from("daily_records")
+          .delete()
+          .eq("id", id);
 
-            if (error) throw error;
+        if (error) throw error;
 
-            Alert.alert("성공", "기록이 삭제되었습니다.");
-            fetchRecords(); // 목록 새로고침
-          } catch (error: any) {
-            Alert.alert("오류", error.message);
-          }
-        },
-      },
-    ]);
+        showAlert("성공", "기록이 삭제되었습니다.");
+        fetchRecords(); // 목록 새로고침
+      } catch (error: any) {
+        showAlert("오류", error.message);
+      }
+    });
   };
 
   const renderItem = ({ item }: { item: DailyRecord }) => (

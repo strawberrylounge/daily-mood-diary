@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -11,6 +12,18 @@ import {
   View,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+
+// ========================================
+// 웹 호환 코드 (나중에 삭제 예정)
+// ========================================
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === "web") {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
+// ========================================
 
 export default function RecordScreen() {
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -37,8 +50,9 @@ export default function RecordScreen() {
 
   const handleSave = async () => {
     // 유효성 검사
-    if (!sleepHours || parseFloat(sleepHours) <= 0) {
-      Alert.alert("오류", "수면 시간을 입력해주세요.");
+    if (sleepHours === null || parseFloat(sleepHours) <= 0) {
+      // Alert.alert("오류", "수면 시간을 입력해주세요."); // 웹 호환 전
+      showAlert("오류", "수면 시간을 입력해주세요."); // 웹 호환
       return;
     }
 
@@ -78,11 +92,13 @@ export default function RecordScreen() {
         throw error;
       }
 
-      Alert.alert("성공", "오늘의 기분이 저장되었습니다!");
+      // Alert.alert("성공", "오늘의 기분이 저장되었습니다!"); // 웹 호환 전
+      showAlert("성공", "오늘의 기분이 저장되었습니다!"); // 웹 호환
       router.back();
     } catch (error: any) {
       console.error("전체 에러:", error);
-      Alert.alert("오류", error.message);
+      // Alert.alert("오류", error.message); // 웹 호환 전
+      showAlert("오류", error.message); // 웹 호환
     } finally {
       setLoading(false);
     }
