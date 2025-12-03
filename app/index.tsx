@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
+import { Colors } from "../constants/theme";
 import { supabase } from "../lib/supabase";
 
 export default function Index() {
@@ -40,7 +41,7 @@ export default function Index() {
       data?.forEach((record) => {
         marked[record.record_date] = {
           marked: true,
-          dotColor: "#007AFF",
+          dotColor: Colors.light.primary,
           recordId: record.id, // ID 저장
         };
       });
@@ -80,14 +81,14 @@ export default function Index() {
     [selectedDate]: {
       ...recordedDates[selectedDate],
       selected: true,
-      selectedColor: "#34C759",
+      selectedColor: Colors.light.success,
     },
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={Colors.light.primary} />
         <Text style={styles.loadingText}>로딩 중...</Text>
       </View>
     );
@@ -95,37 +96,52 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>기분 기록</Text>
-      <Text style={styles.subtitle}>날짜를 선택해서 기록하세요</Text>
+      <Text style={styles.title}>Mood Tracker</Text>
+      <Text style={styles.subtitle}>날짜를 선택해서 기록하세요!</Text>
 
       <Calendar
         onDayPress={handleDayPress}
         markedDates={markedDates}
         maxDate={today}
         theme={{
-          todayTextColor: "#FF3B30",
-          selectedDayBackgroundColor: "#34C759",
+          todayTextColor: Colors.light.error,
+          selectedDayBackgroundColor: Colors.light.success,
           selectedDayTextColor: "#ffffff",
-          arrowColor: "#007AFF",
-          monthTextColor: "#000",
+          arrowColor: Colors.light.primaryDark,
+          monthTextColor: Colors.light.text,
           textMonthFontSize: 18,
           textMonthFontWeight: "bold",
-          dotColor: "#007AFF",
+          dotColor: Colors.light.primary,
         }}
+        renderArrow={(direction) => (
+          <Text style={styles.arrow}>{direction === "left" ? "◀" : "▶"}</Text>
+        )}
         style={styles.calendar}
       />
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: "#007AFF" }]} />
+          <View
+            style={[
+              styles.legendDot,
+              { backgroundColor: Colors.light.primary },
+            ]}
+          />
           <Text style={styles.legendText}>기록 있음</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: "#34C759" }]} />
+          <View
+            style={[
+              styles.legendDot,
+              { backgroundColor: Colors.light.success },
+            ]}
+          />
           <Text style={styles.legendText}>선택됨</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: "#FF3B30" }]} />
+          <View
+            style={[styles.legendDot, { backgroundColor: Colors.light.error }]}
+          />
           <Text style={styles.legendText}>오늘</Text>
         </View>
       </View>
@@ -134,7 +150,7 @@ export default function Index() {
         style={styles.historyButton}
         onPress={() => router.push("/history")}
       >
-        <Text style={styles.historyButtonText}>📋 전체 기록 보기</Text>
+        <Text style={styles.historyButtonText}>전체 기록 보기</Text>
       </TouchableOpacity>
     </View>
   );
@@ -143,30 +159,33 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
     padding: 20,
+    backgroundColor: Colors.light.background,
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    flex: 1,
+    backgroundColor: Colors.light.background,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#666",
+    color: Colors.light.textSecondary,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
     marginTop: 20,
     marginBottom: 8,
+    fontWeight: "bold",
+    fontSize: 32,
+    textAlign: "center",
+    color: Colors.light.text,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
     marginBottom: 24,
+    fontSize: 16,
+    color: Colors.light.textSecondary,
+    textAlign: "center",
   },
   calendar: {
     borderRadius: 12,
@@ -175,6 +194,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  arrow: {
+    fontSize: 18,
+    color: Colors.light.primaryDark,
+    fontWeight: "bold",
   },
   legend: {
     flexDirection: "row",
@@ -195,19 +219,19 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.light.textSecondary,
   },
   historyButton: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.surface,
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: Colors.light.border,
   },
   historyButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: Colors.light.text,
   },
 });

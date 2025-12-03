@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import type { DailyRecord } from "../types/database";
+import { Colors } from "../constants/theme";
 
 // ========================================
 // 웹 호환 코드 (나중에 삭제 예정)
@@ -171,13 +172,13 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Colors.light.background,
   },
   list: {
     padding: 16,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -196,13 +197,14 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 18,
     fontWeight: "bold",
+    color: Colors.light.text,
   },
   actions: {
     flexDirection: "row",
     gap: 8,
   },
   editButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.light.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   deleteButton: {
-    backgroundColor: "#FF3B30",
+    backgroundColor: Colors.light.error,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
@@ -228,18 +230,18 @@ const styles = StyleSheet.create({
   },
   info: {
     fontSize: 14,
-    color: "#333",
+    color: Colors.light.text,
   },
   notes: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.light.textSecondary,
     marginTop: 8,
     fontStyle: "italic",
   },
   empty: {
     textAlign: "center",
     fontSize: 16,
-    color: "#999",
+    color: Colors.light.textSecondary,
     marginTop: 40,
   },
 });

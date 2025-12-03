@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { Colors } from "../constants/theme";
 
 // ========================================
 // 웹 호환 코드 (나중에 삭제 예정)
@@ -429,17 +430,18 @@ export default function RecordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.surface,
     padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 8,
+    color: Colors.light.text,
   },
   date: {
     fontSize: 16,
-    color: "#666",
+    color: Colors.light.textSecondary,
     marginBottom: 24,
   },
   section: {
@@ -449,6 +451,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 8,
+    color: Colors.light.text,
   },
   buttonRow: {
     flexDirection: "row",
@@ -460,16 +463,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.surface,
   },
   scoreButtonActive: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   scoreButtonText: {
     fontSize: 14,
-    color: "#000",
+    color: Colors.light.text,
   },
   scoreButtonTextActive: {
     color: "#fff",
@@ -477,10 +480,11 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: Colors.light.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: Colors.light.text,
   },
   textArea: {
     height: 100,
@@ -493,14 +497,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   saveButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.light.primary,
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 40,
   },
   saveButtonDisabled: {
-    backgroundColor: "#ccc",
+    backgroundColor: Colors.light.border,
   },
   saveButtonText: {
     color: "#fff",
