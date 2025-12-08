@@ -52,6 +52,8 @@ export default function EditScreen() {
   const [hasBingeEating, setHasBingeEating] = useState(false);
   const [hasPhysicalPain, setHasPhysicalPain] = useState(false);
   const [hasPanicAttack, setHasPanicAttack] = useState(false);
+  const [hasExercise, setHasExercise] = useState(false);
+  const [hasCrying, setHasCrying] = useState(false);
   const [alcoholAmount, setAlcoholAmount] = useState("0");
   const [notes, setNotes] = useState("");
 
@@ -109,6 +111,8 @@ export default function EditScreen() {
       setHasBingeEating(data.has_binge_eating);
       setHasPhysicalPain(data.has_physical_pain);
       setHasPanicAttack(data.has_panic_attack);
+      setHasExercise(data.has_exercise);
+      setHasCrying(data.has_crying);
       setAlcoholAmount(data.has_alcohol.toString());
       setNotes(data.notes || "");
     } catch (error: any) {
@@ -156,6 +160,8 @@ export default function EditScreen() {
           has_binge_eating: hasBingeEating,
           has_physical_pain: hasPhysicalPain,
           has_panic_attack: hasPanicAttack,
+          has_exercise: hasExercise,
+          has_crying: hasCrying,
           has_alcohol: parseFloat(alcoholAmount),
           notes: notes || null,
           updated_at: new Date().toISOString(),
@@ -233,19 +239,21 @@ export default function EditScreen() {
         <View style={styles.readOnlyCard}>
           <View style={styles.readOnlySection}>
             <Text style={styles.readOnlyLabel}>기분</Text>
-            <Text style={styles.readOnlyValue}>
-              {selectedMoods.join(", ")}
-            </Text>
+            <Text style={styles.readOnlyValue}>{selectedMoods.join(", ")}</Text>
           </View>
 
           <View style={styles.readOnlySection}>
             <Text style={styles.readOnlyLabel}>불안</Text>
-            <Text style={styles.readOnlyValue}>{convertToDisplay(anxiety)}</Text>
+            <Text style={styles.readOnlyValue}>
+              {convertToDisplay(anxiety)}
+            </Text>
           </View>
 
           <View style={styles.readOnlySection}>
             <Text style={styles.readOnlyLabel}>긴장/흥분</Text>
-            <Text style={styles.readOnlyValue}>{convertToDisplay(tension)}</Text>
+            <Text style={styles.readOnlyValue}>
+              {convertToDisplay(tension)}
+            </Text>
           </View>
 
           <View style={styles.readOnlySection}>
@@ -305,18 +313,16 @@ export default function EditScreen() {
             <View style={styles.readOnlySection}>
               <Text style={styles.readOnlyLabel}>특이사항</Text>
               <View style={styles.booleanTags}>
-                {hasMenstruation && (
-                  <Text style={styles.booleanTag}>생리</Text>
-                )}
-                {hasBingeEating && (
-                  <Text style={styles.booleanTag}>폭식</Text>
-                )}
+                {hasMenstruation && <Text style={styles.booleanTag}>생리</Text>}
+                {hasBingeEating && <Text style={styles.booleanTag}>폭식</Text>}
                 {hasPhysicalPain && (
                   <Text style={styles.booleanTag}>신체 통증</Text>
                 )}
                 {hasPanicAttack && (
                   <Text style={styles.booleanTag}>공황 발작</Text>
                 )}
+                {hasCrying && <Text style={styles.booleanTag}>울음</Text>}
+                {hasExercise && <Text style={styles.booleanTag}>운동</Text>}
               </View>
             </View>
           )}
