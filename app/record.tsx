@@ -1,6 +1,6 @@
 import Slider from "@react-native-community/slider";
-import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Platform,
@@ -13,11 +13,11 @@ import {
   View,
 } from "react-native";
 import { Colors } from "../constants/theme";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
 
 // ========================================
-// 웹 호환 코드 (나중에 삭제 예정)
+// [TODO] 테스트용 웹 호환 코드 (나중에 삭제 예정)
 // ========================================
 const showAlert = (title: string, message: string) => {
   if (Platform.OS === "web") {
@@ -29,9 +29,16 @@ const showAlert = (title: string, message: string) => {
 // ========================================
 
 export default function RecordScreen() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const routerNav = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
   const today = params.date || new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      routerNav.replace("/sign-in");
+    }
+  }, [user, authLoading]);
 
   // 상태 관리
   const [selectedMoods, setSelectedMoods] = useState<number[]>([]);
@@ -72,6 +79,11 @@ export default function RecordScreen() {
   };
 
   const handleSave = async () => {
+    if (!user?.id) {
+      showAlert("오류", "로그인이 필요합니다.");
+      return;
+    }
+
     // 유효성 검사
     if (selectedMoods.length === 0) {
       showAlert("오류", "기분을 최소 1개 이상 선택해주세요.");
@@ -92,7 +104,7 @@ export default function RecordScreen() {
       const moodDownValues = selectedMoods.filter((m) => m < 0);
 
       const payload = {
-        user_id: user?.id,
+        user_id: user.id,
         record_date: today,
         mood_up_score: moodUpValues.length > 0 ? moodUpValues[0] : null,
         mood_down_score: moodDownValues.length > 0 ? moodDownValues[0] : null,
@@ -110,7 +122,7 @@ export default function RecordScreen() {
         has_physical_pain: hasPhysicalPain,
         has_panic_attack: hasPanicAttack,
         has_alcohol: parseFloat(alcoholAmount),
-        has_excercise: hasExercise,
+        has_exercise: hasExercise,
         has_crying: hasCrying,
         notes: notes || null,
       };

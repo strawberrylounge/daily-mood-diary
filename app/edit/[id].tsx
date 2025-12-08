@@ -1,5 +1,5 @@
 import Slider from "@react-native-community/slider";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -30,10 +30,17 @@ const showAlert = (title: string, message: string) => {
 // ========================================
 
 export default function EditScreen() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const routerNav = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      routerNav.replace("/auth");
+    }
+  }, [user, authLoading]);
   const [saving, setSaving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -60,8 +67,12 @@ export default function EditScreen() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    fetchRecord();
-  }, [id]);
+    if (user?.id && id) {
+      fetchRecord();
+    } else if (!user?.id) {
+      setLoading(false);
+    }
+  }, [user?.id, id]);
 
   // 슬라이드 값 변환 함수
   const convertToDisplay = (value: number) => value - 4; // 0~8 -> -4~4
@@ -82,12 +93,17 @@ export default function EditScreen() {
   };
 
   const fetchRecord = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("daily_records")
         .select("*")
         .eq("id", id)
-        .eq("user_id", user?.id)
+        .eq("user_id", user.id)
         .single();
 
       if (error) throw error;
@@ -127,6 +143,8 @@ export default function EditScreen() {
   };
 
   const handleUpdate = async () => {
+    if (!user?.id) return;
+
     // 유효성 검사
     if (selectedMoods.length === 0) {
       showAlert("오류", "기분을 최소 1개 이상 선택해주세요.");
@@ -170,7 +188,7 @@ export default function EditScreen() {
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)
-        .eq("user_id", user?.id);
+        .eq("user_id", user.id);
 
       if (error) throw error;
 
@@ -210,6 +228,8 @@ export default function EditScreen() {
   };
 
   const deleteRecord = async () => {
+    if (!user?.id) return;
+
     setSaving(true);
 
     try {
@@ -217,7 +237,7 @@ export default function EditScreen() {
         .from("daily_records")
         .delete()
         .eq("id", id)
-        .eq("user_id", user?.id);
+        .eq("user_id", user.id);
 
       if (error) throw error;
 

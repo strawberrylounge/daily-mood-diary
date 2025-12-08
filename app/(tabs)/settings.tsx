@@ -1,28 +1,53 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { useAuth } from "../../contexts/AuthContext";
+import { useRouter } from "expo-router";
+import { useEffect } from "react";
+import {
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Colors } from "../../constants/theme";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function SettingsScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace("/sign-in");
+    }
+  }, [user, authLoading]);
 
   const handleLogout = async () => {
-    Alert.alert("로그아웃", "정말 로그아웃하시겠습니까?", [
-      {
-        text: "취소",
-        style: "cancel",
-      },
-      {
-        text: "로그아웃",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await signOut();
-          } catch (error: any) {
-            Alert.alert("오류", error.message || "로그아웃에 실패했습니다.");
-          }
+    // [TODO] 테스트용 웹 호환 코드
+    if (Platform.OS === "web") {
+      try {
+        await signOut();
+      } catch (error: any) {
+        window.alert(`오류: ${error.message}`);
+      }
+    } else {
+      Alert.alert("로그아웃", "정말 로그아웃하시겠습니까?", [
+        {
+          text: "취소",
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: "로그아웃",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error: any) {
+              Alert.alert("오류", error.message || "로그아웃에 실패했습니다.");
+            }
+          },
+        },
+      ]);
+    }
   };
 
   return (

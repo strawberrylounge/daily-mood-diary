@@ -1,32 +1,23 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, Redirect } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import Loading from '@/components/Loading';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 function RootNavigator() {
-  const { user, loading } = useAuth();
   const colorScheme = useColorScheme();
-
-  if (loading) {
-    return <Loading message="로딩 중..." />;
-  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        {!user ? (
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-        ) : (
-          <>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="record" options={{ title: '기록 작성' }} />
-            <Stack.Screen name="edit/[id]" options={{ title: '기록 상세' }} />
-          </>
-        )}
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-up" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="record" options={{ headerShown: true, title: '기록 작성' }} />
+        <Stack.Screen name="edit/[id]" options={{ headerShown: true, title: '기록 상세' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

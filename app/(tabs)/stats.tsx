@@ -5,6 +5,7 @@ import { Colors } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
 import type { DailyRecord } from "../../types/database";
 import { useAuth } from "../../contexts/AuthContext";
+import { useRouter } from "expo-router";
 
 interface MonthlyStats {
   month: string;
@@ -23,17 +24,33 @@ interface MonthlyStats {
 }
 
 export default function StatsScreen() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (!authLoading && !user) {
+      router.replace("/auth");
+    }
+  }, [user, authLoading]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchStats();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   const convertToDisplay = (value: number) => value - 4;
 
   const fetchStats = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       // 최근 6개월 데이터 가져오기
       const sixMonthsAgo = new Date();
@@ -42,7 +59,7 @@ export default function StatsScreen() {
       const { data, error } = await supabase
         .from("daily_records")
         .select("*")
-        .eq("user_id", user?.id)
+        .eq("user_id", user.id)
         .gte("record_date", sixMonthsAgo.toISOString().split("T")[0])
         .order("record_date", { ascending: false });
 

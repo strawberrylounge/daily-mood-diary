@@ -1,14 +1,15 @@
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
-import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 export default function Index() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const routerNav = useRouter();
   const [recordedDates, setRecordedDates] = useState<{ [key: string]: any }>(
     {}
   );
@@ -16,10 +17,25 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchRecordedDates();
-  }, []);
+    if (!authLoading && !user) {
+      routerNav.replace("/auth");
+    }
+  }, [user, authLoading]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchRecordedDates();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   const fetchRecordedDates = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       // 최근 3개월 기록 가져오기
       const threeMonthsAgo = new Date();
@@ -28,7 +44,7 @@ export default function Index() {
       const { data, error } = await supabase
         .from("daily_records")
         .select("record_date, id")
-        .eq("user_id", user?.id)
+        .eq("user_id", user.id)
         .gte("record_date", threeMonthsAgo.toISOString().split("T")[0])
         .order("record_date", { ascending: false });
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,15 +11,23 @@ import {
 } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { Colors } from "@/constants/theme";
+import { useRouter } from "expo-router";
 
-export default function Auth() {
+export default function SignIn() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
 
-  const handleAuth = async () => {
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/(tabs)");
+    }
+  }, [user, authLoading]);
+
+  const handleSignIn = async () => {
     if (!email || !password) {
       Alert.alert("오류", "이메일과 비밀번호를 입력해주세요.");
       return;
@@ -27,17 +35,9 @@ export default function Auth() {
 
     setLoading(true);
     try {
-      if (isSignUp) {
-        await signUp(email, password);
-        Alert.alert(
-          "성공",
-          "회원가입이 완료되었습니다. 이메일 인증을 확인해주세요."
-        );
-      } else {
-        await signIn(email, password);
-      }
+      await signIn(email, password);
     } catch (error: any) {
-      Alert.alert("오류", error.message || "인증에 실패했습니다.");
+      Alert.alert("오류", error.message || "로그인에 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -50,9 +50,7 @@ export default function Auth() {
     >
       <View style={styles.content}>
         <Text style={styles.title}>Mood Tracker</Text>
-        <Text style={styles.subtitle}>
-          {isSignUp ? "새 계정 만들기" : "로그인"}
-        </Text>
+        <Text style={styles.subtitle}>로그인</Text>
 
         <View style={styles.form}>
           <TextInput
@@ -78,22 +76,20 @@ export default function Auth() {
 
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleAuth}
+            onPress={handleSignIn}
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? "처리 중..." : isSignUp ? "회원가입" : "로그인"}
+              {loading ? "처리 중..." : "로그인"}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.switchButton}
-            onPress={() => setIsSignUp(!isSignUp)}
+            onPress={() => router.push("/sign-up")}
           >
             <Text style={styles.switchButtonText}>
-              {isSignUp
-                ? "이미 계정이 있으신가요? 로그인"
-                : "계정이 없으신가요? 회원가입"}
+              계정이 없으신가요? 회원가입
             </Text>
           </TouchableOpacity>
         </View>
