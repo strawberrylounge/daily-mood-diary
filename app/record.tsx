@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Colors } from "../constants/theme";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 
 // ========================================
 // 웹 호환 코드 (나중에 삭제 예정)
@@ -28,6 +29,7 @@ const showAlert = (title: string, message: string) => {
 // ========================================
 
 export default function RecordScreen() {
+  const { user } = useAuth();
   const params = useLocalSearchParams<{ date?: string }>();
   const today = params.date || new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
@@ -90,6 +92,7 @@ export default function RecordScreen() {
       const moodDownValues = selectedMoods.filter((m) => m < 0);
 
       const payload = {
+        user_id: user?.id,
         record_date: today,
         mood_up_score: moodUpValues.length > 0 ? moodUpValues[0] : null,
         mood_down_score: moodDownValues.length > 0 ? moodDownValues[0] : null,

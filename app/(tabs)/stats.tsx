@@ -4,6 +4,7 @@ import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
 import type { DailyRecord } from "../../types/database";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface MonthlyStats {
   month: string;
@@ -22,6 +23,7 @@ interface MonthlyStats {
 }
 
 export default function StatsScreen() {
+  const { user } = useAuth();
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +42,7 @@ export default function StatsScreen() {
       const { data, error } = await supabase
         .from("daily_records")
         .select("*")
+        .eq("user_id", user?.id)
         .gte("record_date", sixMonthsAgo.toISOString().split("T")[0])
         .order("record_date", { ascending: false });
 

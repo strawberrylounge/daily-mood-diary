@@ -5,8 +5,10 @@ import { Calendar, DateData } from "react-native-calendars";
 import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function Index() {
+  const { user } = useAuth();
   const [recordedDates, setRecordedDates] = useState<{ [key: string]: any }>(
     {}
   );
@@ -26,6 +28,7 @@ export default function Index() {
       const { data, error } = await supabase
         .from("daily_records")
         .select("record_date, id")
+        .eq("user_id", user?.id)
         .gte("record_date", threeMonthsAgo.toISOString().split("T")[0])
         .order("record_date", { ascending: false });
 

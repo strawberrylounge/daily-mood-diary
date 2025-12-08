@@ -38,6 +38,16 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "설정",
+          tabBarLabel: "설정",
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="cog" size={24} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

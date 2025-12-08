@@ -15,6 +15,7 @@ import {
 import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../contexts/AuthContext";
 
 // ========================================
 // 웹 호환 코드 (나중에 삭제 예정)
@@ -29,6 +30,7 @@ const showAlert = (title: string, message: string) => {
 // ========================================
 
 export default function EditScreen() {
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [loading, setLoading] = useState(true);
@@ -85,6 +87,7 @@ export default function EditScreen() {
         .from("daily_records")
         .select("*")
         .eq("id", id)
+        .eq("user_id", user?.id)
         .single();
 
       if (error) throw error;
@@ -166,7 +169,8 @@ export default function EditScreen() {
           notes: notes || null,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user?.id);
 
       if (error) throw error;
 
@@ -212,7 +216,8 @@ export default function EditScreen() {
       const { error } = await supabase
         .from("daily_records")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user?.id);
 
       if (error) throw error;
 
