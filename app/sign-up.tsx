@@ -27,20 +27,33 @@ export default function SignUp() {
     }
   }, [user, authLoading]);
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSignUp = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
       Alert.alert("오류", "이메일과 비밀번호를 입력해주세요.");
       return;
     }
 
-    if (password.length < 6) {
+    if (!validateEmail(trimmedEmail)) {
+      Alert.alert("오류", "올바른 이메일 형식을 입력해주세요.\n예: user@example.com");
+      return;
+    }
+
+    if (trimmedPassword.length < 6) {
       Alert.alert("오류", "비밀번호는 최소 6자 이상이어야 합니다.");
       return;
     }
 
     setLoading(true);
     try {
-      await signUp(email, password);
+      await signUp(trimmedEmail, trimmedPassword);
       Alert.alert(
         "성공",
         "회원가입이 완료되었습니다. 이메일 인증을 확인해주세요.",
@@ -52,6 +65,7 @@ export default function SignUp() {
         ]
       );
     } catch (error: any) {
+      console.error("Sign up error:", error);
       Alert.alert("오류", error.message || "회원가입에 실패했습니다.");
     } finally {
       setLoading(false);
