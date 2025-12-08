@@ -47,6 +47,8 @@ export default function RecordScreen() {
   const [hasBingeEating, setHasBingeEating] = useState(false);
   const [hasPhysicalPain, setHasPhysicalPain] = useState(false);
   const [hasPanicAttack, setHasPanicAttack] = useState(false);
+  const [hasExercise, setHasExercise] = useState(false);
+  const [hasCrying, setHasCrying] = useState(false);
   const [alcoholAmount, setAlcoholAmount] = useState("0");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -105,6 +107,8 @@ export default function RecordScreen() {
         has_physical_pain: hasPhysicalPain,
         has_panic_attack: hasPanicAttack,
         has_alcohol: parseFloat(alcoholAmount),
+        has_excercise: hasExercise,
+        has_crying: hasCrying,
         notes: notes || null,
       };
 
@@ -369,6 +373,14 @@ export default function RecordScreen() {
         <View style={styles.switchRow}>
           <Text>공황 발작</Text>
           <Switch value={hasPanicAttack} onValueChange={setHasPanicAttack} />
+        </View>
+        <View style={styles.switchRow}>
+          <Text>울음</Text>
+          <Switch value={hasCrying} onValueChange={setHasCrying} />
+        </View>
+        <View style={styles.switchRow}>
+          <Text>운동</Text>
+          <Switch value={hasExercise} onValueChange={setHasExercise} />
         </View>
       </View>
 

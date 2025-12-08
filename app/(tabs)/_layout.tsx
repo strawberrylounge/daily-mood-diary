@@ -1,4 +1,7 @@
 import { Tabs } from "expo-router";
+
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+
 import { Colors } from "../../constants/theme";
 
 export default function TabLayout() {
@@ -20,6 +23,9 @@ export default function TabLayout() {
         options={{
           title: "통계",
           tabBarLabel: "통계",
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="bar-chart" size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -27,6 +33,9 @@ export default function TabLayout() {
         options={{
           title: "홈",
           tabBarLabel: "홈",
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="home" size={24} color={color} />
+          ),
         }}
       />
     </Tabs>
