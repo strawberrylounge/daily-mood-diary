@@ -17,6 +17,8 @@ export type DailyRecord = {
   has_binge_eating: boolean;
   has_physical_pain: boolean;
   has_panic_attack: boolean;
+  has_exercise: boolean;
+  has_crying: boolean;
   has_alcohol: number; // 잔 수
   notes?: string;
   created_at: string;
