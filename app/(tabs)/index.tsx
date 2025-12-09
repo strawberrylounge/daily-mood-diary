@@ -1,6 +1,6 @@
 import { router, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
@@ -108,6 +108,14 @@ export default function Index() {
       <Text style={styles.title}>Tracker</Text>
       <Text style={styles.subtitle}>오늘의 기분을 기록하세요.</Text>
 
+      <TouchableOpacity
+        style={styles.assessmentButton}
+        onPress={() => router.push("/assessment")}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.assessmentButtonText}>📝 월간 셀프 평가</Text>
+      </TouchableOpacity>
+
       <Calendar
         onDayPress={handleDayPress}
         markedDates={markedDates}
@@ -170,9 +178,26 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   subtitle: {
-    marginBottom: 24,
+    marginBottom: 16,
     fontSize: 16,
     color: Colors.light.textSecondary,
+    textAlign: "center",
+  },
+  assessmentButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  assessmentButtonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff",
     textAlign: "center",
   },
   calendar: {

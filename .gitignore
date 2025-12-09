@@ -43,5 +43,5 @@ app-example
 /ios
 /android
 
-# data
-*.sql
+# dummy datas
+seed-november.sql
