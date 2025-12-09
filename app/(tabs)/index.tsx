@@ -18,7 +18,7 @@ export default function Index() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      routerNav.replace("/auth");
+      routerNav.replace("/sign-in");
     }
   }, [user, authLoading]);
 
@@ -106,9 +106,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tracker</Text>
-      <Text style={styles.subtitle}>
-        Lorem ipsum, dolor sit amet consectetur.
-      </Text>
+      <Text style={styles.subtitle}>오늘의 기분을 기록하세요.</Text>
 
       <Calendar
         onDayPress={handleDayPress}
