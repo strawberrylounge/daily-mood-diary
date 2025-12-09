@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(node scripts/seed-november-data.js:*)"
     ],
     "deny": [],
     "ask": []

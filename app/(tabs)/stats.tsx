@@ -1,11 +1,14 @@
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { LineChart } from "react-native-chart-kit";
 import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
+import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
 import type { DailyRecord } from "../../types/database";
-import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "expo-router";
+
+const screenWidth = Dimensions.get("window").width;
 
 interface MonthlyStats {
   month: string;
@@ -27,23 +30,47 @@ export default function StatsScreen() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
+  const [recentRecords, setRecentRecords] = useState<DailyRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/auth");
+      router.replace("/sign-in");
     }
   }, [user, authLoading]);
 
   useEffect(() => {
     if (user?.id) {
       fetchStats();
+      fetchRecentRecords();
     } else {
       setLoading(false);
     }
   }, [user?.id]);
 
   const convertToDisplay = (value: number) => value - 4;
+
+  const fetchRecentRecords = async () => {
+    if (!user?.id) return;
+
+    try {
+      // 최근 30일 데이터 가져오기
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data, error } = await supabase
+        .from("daily_records")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("record_date", thirtyDaysAgo.toISOString().split("T")[0])
+        .order("record_date", { ascending: true });
+
+      if (error) throw error;
+      setRecentRecords(data || []);
+    } catch (error: any) {
+      console.error("Error fetching recent records:", error);
+    }
+  };
 
   const fetchStats = async () => {
     if (!user?.id) {
@@ -144,13 +171,136 @@ export default function StatsScreen() {
     return `${year}년 ${parseInt(mon)}월`;
   };
 
+  const prepareMoodChartData = () => {
+    if (recentRecords.length === 0) {
+      return null;
+    }
+
+    // 날짜별 라벨 생성 (MM/DD 형식)
+    const labels = recentRecords.map((record) => {
+      const date = new Date(record.record_date);
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+    });
+
+    // mood_up_score와 mood_down_score를 별도로 처리
+    const moodUpData = recentRecords.map((record) =>
+      record.mood_up_score !== null && record.mood_up_score !== undefined
+        ? record.mood_up_score
+        : null
+    );
+
+    const moodDownData = recentRecords.map((record) =>
+      record.mood_down_score !== null && record.mood_down_score !== undefined
+        ? record.mood_down_score
+        : null
+    );
+
+    // 데이터셋 생성 (null이 아닌 데이터가 있는 경우만 포함)
+    const datasets = [];
+
+    const hasMoodUp = moodUpData.some((v) => v !== null);
+    const hasMoodDown = moodDownData.some((v) => v !== null);
+
+    if (hasMoodUp) {
+      datasets.push({
+        data: moodUpData.map((v) => v ?? 0), // null을 0으로 변환 (차트 렌더링용)
+        color: (opacity = 1) => `rgba(255, 107, 107, ${opacity})`, // 빨간색 (조증)
+        strokeWidth: 2,
+      });
+    }
+
+    if (hasMoodDown) {
+      datasets.push({
+        data: moodDownData.map((v) => v ?? 0), // null을 0으로 변환
+        color: (opacity = 1) => `rgba(78, 121, 167, ${opacity})`, // 파란색 (우울)
+        strokeWidth: 2,
+      });
+    }
+
+    return {
+      labels,
+      datasets,
+      hasMoodUp,
+      hasMoodDown,
+    };
+  };
+
+  const moodChartData = prepareMoodChartData();
+
   if (loading) {
     return <Loading message="통계를 불러오는 중..." />;
   }
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>월별 통계</Text>
+      <Text style={styles.title}>기분 추세</Text>
+      <Text style={styles.subtitle}>최근 30일 mood_score 변화</Text>
+
+      {moodChartData && moodChartData.datasets.length > 0 ? (
+        <View style={styles.chartContainer}>
+          <LineChart
+            data={{
+              labels: moodChartData.labels,
+              datasets: moodChartData.datasets,
+            }}
+            width={screenWidth - 40}
+            height={220}
+            chartConfig={{
+              backgroundColor: Colors.light.surface,
+              backgroundGradientFrom: Colors.light.surface,
+              backgroundGradientTo: Colors.light.surface,
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              style: {
+                borderRadius: 16,
+              },
+              propsForDots: {
+                r: "3",
+                strokeWidth: "2",
+              },
+            }}
+            bezier
+            style={styles.chart}
+            withInnerLines={true}
+            withOuterLines={true}
+            withVerticalLines={false}
+            withHorizontalLines={true}
+            segments={4}
+          />
+          <View style={styles.legendContainer}>
+            {moodChartData.hasMoodUp && (
+              <View style={styles.legendItem}>
+                <View
+                  style={[
+                    styles.legendColor,
+                    { backgroundColor: "rgba(255, 107, 107, 1)" },
+                  ]}
+                />
+                <Text style={styles.legendText}>기분 Up (조증)</Text>
+              </View>
+            )}
+            {moodChartData.hasMoodDown && (
+              <View style={styles.legendItem}>
+                <View
+                  style={[
+                    styles.legendColor,
+                    { backgroundColor: "rgba(78, 121, 167, 1)" },
+                  ]}
+                />
+                <Text style={styles.legendText}>기분 Down (우울)</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.chartNote}>
+            * 혼재 상태(조증+우울)는 두 선이 모두 표시됩니다
+          </Text>
+        </View>
+      ) : (
+        <Text style={styles.empty}>최근 30일 기록이 없습니다.</Text>
+      )}
+
+      <Text style={styles.sectionTitle}>월별 통계</Text>
       <Text style={styles.subtitle}>최근 6개월 평균 기록</Text>
 
       {monthlyStats.length === 0 ? (
@@ -160,9 +310,7 @@ export default function StatsScreen() {
           <View key={stat.month} style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.monthText}>{formatMonth(stat.month)}</Text>
-              <Text style={styles.countText}>
-                {stat.recordCount}일 기록됨
-              </Text>
+              <Text style={styles.countText}>{stat.recordCount}일 기록됨</Text>
             </View>
 
             <View style={styles.statsGrid}>
@@ -264,6 +412,57 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontSize: 16,
     color: Colors.light.textSecondary,
+    textAlign: "center",
+  },
+  sectionTitle: {
+    marginTop: 40,
+    marginBottom: 8,
+    fontWeight: "bold",
+    fontSize: 28,
+    textAlign: "center",
+    color: Colors.light.text,
+  },
+  chartContainer: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    alignItems: "center",
+  },
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
+  },
+  legendContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 16,
+    gap: 20,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  legendColor: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  legendText: {
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  chartNote: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+    marginTop: 12,
+    fontStyle: "italic",
     textAlign: "center",
   },
   card: {

@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { Colors } from "@/constants/theme";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useAuth } from "@/contexts/AuthContext";
-import { Colors } from "@/constants/theme";
-import { useRouter } from "expo-router";
 
 export default function SignIn() {
   const { user, loading: authLoading } = useAuth();
@@ -49,8 +49,8 @@ export default function SignIn() {
       style={styles.container}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Mood Tracker</Text>
-        <Text style={styles.subtitle}>로그인</Text>
+        <Text style={styles.title}>Tracker</Text>
+        <Text style={styles.subtitle}>Login to your account</Text>
 
         <View style={styles.form}>
           <TextInput

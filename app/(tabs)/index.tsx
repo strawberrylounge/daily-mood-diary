@@ -105,8 +105,10 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mood Tracker</Text>
-      <Text style={styles.subtitle}>오늘의 상태를 기록하세요.</Text>
+      <Text style={styles.title}>Tracker</Text>
+      <Text style={styles.subtitle}>
+        Lorem ipsum, dolor sit amet consectetur.
+      </Text>
 
       <Calendar
         onDayPress={handleDayPress}
