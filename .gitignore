@@ -45,3 +45,5 @@ app-example
 
 # dummy datas
 seed-november.sql
+
+.claude/settings.local.json
