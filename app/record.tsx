@@ -226,12 +226,6 @@ export default function RecordScreen() {
     <ScrollView style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
         <View style={styles.headerTextContainer}>
           <Text style={styles.title}>오늘의 기분 기록</Text>
           <Text style={styles.date}>{today}</Text>
@@ -243,24 +237,18 @@ export default function RecordScreen() {
       {currentStep === 1 && (
         <View style={styles.section}>
           <Text style={styles.label}>기분 (최대 2개 선택)</Text>
-          <View style={styles.buttonRow}>
+          <View style={styles.scoreButtonsContainer}>
             {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
               <TouchableOpacity
                 key={val}
                 style={[
-                  styles.scoreButton,
-                  selectedMoods.includes(val) && styles.scoreButtonActive,
+                  styles.circleButton,
+                  { backgroundColor: getScoreColor(val) },
+                  selectedMoods.includes(val) && styles.circleButtonSelected,
                 ]}
                 onPress={() => handleMoodPress(val)}
               >
-                <Text
-                  style={[
-                    styles.scoreButtonText,
-                    selectedMoods.includes(val) && styles.scoreButtonTextActive,
-                  ]}
-                >
-                  {val}
-                </Text>
+                <Text style={styles.circleButtonText}>{val}</Text>
               </TouchableOpacity>
             ))}
           </View>
