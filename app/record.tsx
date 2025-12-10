@@ -1,4 +1,3 @@
-import Slider from "@react-native-community/slider";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -43,13 +42,13 @@ export default function RecordScreen() {
   // 상태 관리
   const [selectedMoods, setSelectedMoods] = useState<number[]>([]);
   // 음수를 처리 하지 못하는 라이브러리 버그로 0이 -4, 8이 4
-  const [anxiety, setAnxiety] = useState(4);
-  const [tension, setTension] = useState(4);
-  const [anger, setAnger] = useState(4);
-  const [interest, setInterest] = useState(4);
-  const [activity, setActivity] = useState(4);
-  const [thoughtSpeed, setThoughtSpeed] = useState(4);
-  const [thoughtContent, setThoughtContent] = useState(4);
+  const [anxiety, setAnxiety] = useState();
+  const [tension, setTension] = useState();
+  const [anger, setAnger] = useState();
+  const [interest, setInterest] = useState();
+  const [activity, setActivity] = useState();
+  const [thoughtSpeed, setThoughtSpeed] = useState();
+  const [thoughtContent, setThoughtContent] = useState();
   const [sleepHours, setSleepHours] = useState("0");
   const [weight, setWeight] = useState("");
   const [hasMenstruation, setHasMenstruation] = useState(false);
@@ -61,10 +60,41 @@ export default function RecordScreen() {
   const [alcoholAmount, setAlcoholAmount] = useState("0");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1); // 1, 2, 3 단계
+
+  // 2단계 항목들의 입력 여부 추적
+  const [touchedFields, setTouchedFields] = useState({
+    anxiety: false,
+    tension: false,
+    anger: false,
+    interest: false,
+    activity: false,
+    thoughtSpeed: false,
+    thoughtContent: false,
+  });
 
   // 슬라이드 값 변환 함수
   const convertToDisplay = (value: number) => value - 4; // 0~8 -> -4~4
   const convertFromDisplay = (value: number) => value + 4; // -4~4 -> 0~8
+
+  // 점수에 따른 색상 반환 함수
+  const getScoreColor = (score: number): string => {
+    const colorMap: { [key: number]: string } = {
+      // 음수 점수: #C07060의 shades (진함 -> 연함)
+      "-4": "#C07060",
+      "-3": "#CC8578",
+      "-2": "#D89A90",
+      "-1": "#E4AFA8",
+      // 0점: 중립 색상
+      "0": "#D9A860",
+      // 양수 점수: #7A9E7E의 shades (연함 -> 진함)
+      "1": "#A4BFA6",
+      "2": "#8FB193",
+      "3": "#7A9E7E",
+      "4": "#6A8E6E",
+    };
+    return colorMap[score] || "#D9A860";
+  };
 
   // 기분 버튼 클릭 핸들러
   const handleMoodPress = (value: number) => {
@@ -76,6 +106,47 @@ export default function RecordScreen() {
       setSelectedMoods([...selectedMoods, value]);
     }
     // 2개 이상이면 무시
+  };
+
+  // 2단계 점수 버튼 클릭 핸들러 (터치 여부 추적)
+  const handleScorePress = (
+    field: keyof typeof touchedFields,
+    setValue: (value: number) => void,
+    score: number
+  ) => {
+    setValue(convertFromDisplay(score)); // -4~4 -> 0~8로 변환
+    setTouchedFields((prev) => ({ ...prev, [field]: true }));
+  };
+
+  // 단계별 유효성 검사
+  const canProceedToNextStep = () => {
+    if (currentStep === 1) {
+      // 1단계: 기분이 최소 1개 이상 선택되어야 함
+      return selectedMoods.length > 0;
+    }
+    if (currentStep === 2) {
+      // 2단계: 모든 슬라이더 항목이 최소 한 번 이상 터치되어야 함
+      return Object.values(touchedFields).every((touched) => touched);
+    }
+    return true;
+  };
+
+  // 다음 단계로 이동
+  const handleNext = () => {
+    if (!canProceedToNextStep()) {
+      if (currentStep === 1) {
+        showAlert("알림", "기분을 최소 1개 이상 선택해주세요.");
+      } else if (currentStep === 2) {
+        showAlert("알림", "모든 항목을 설정해주세요.");
+      }
+      return;
+    }
+    setCurrentStep(currentStep + 1);
+  };
+
+  // 이전 단계로 이동
+  const handlePrevious = () => {
+    setCurrentStep(currentStep - 1);
   };
 
   const handleSave = async () => {
@@ -153,275 +224,336 @@ export default function RecordScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>오늘의 기분 기록</Text>
-      <Text style={styles.date}>{today}</Text>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.title}>오늘의 기분 기록</Text>
+          <Text style={styles.date}>{today}</Text>
+        </View>
+      </View>
+      <Text style={styles.stepIndicator}>{currentStep} / 3 단계</Text>
 
-      {/* 기분 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>기분 (최대 2개 선택)</Text>
-        <View style={styles.buttonRow}>
-          {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
-            <TouchableOpacity
-              key={val}
-              style={[
-                styles.scoreButton,
-                selectedMoods.includes(val) && styles.scoreButtonActive,
-              ]}
-              onPress={() => handleMoodPress(val)}
-            >
-              <Text
+      {/* 1단계: 기분 */}
+      {currentStep === 1 && (
+        <View style={styles.section}>
+          <Text style={styles.label}>기분 (최대 2개 선택)</Text>
+          <View style={styles.buttonRow}>
+            {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((val) => (
+              <TouchableOpacity
+                key={val}
                 style={[
-                  styles.scoreButtonText,
-                  selectedMoods.includes(val) && styles.scoreButtonTextActive,
+                  styles.scoreButton,
+                  selectedMoods.includes(val) && styles.scoreButtonActive,
                 ]}
+                onPress={() => handleMoodPress(val)}
               >
-                {val}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.scoreButtonText,
+                    selectedMoods.includes(val) && styles.scoreButtonTextActive,
+                  ]}
+                >
+                  {val}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
+      )}
 
-      {/* 불안 점수 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>불안: {convertToDisplay(anxiety)}</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={8}
-          step={1}
-          value={anxiety}
-          onValueChange={setAnxiety}
-          minimumTrackTintColor={Colors.light.primary}
-          maximumTrackTintColor={Colors.light.border}
-          thumbTintColor={Colors.light.primary}
-        />
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabelText}>-4</Text>
-          <Text style={styles.sliderLabelText}>0</Text>
-          <Text style={styles.sliderLabelText}>4</Text>
-        </View>
-      </View>
+      {/* 2단계: 점수 버튼 항목들 */}
+      {currentStep === 2 && (
+        <>
+          {/* 불안 점수 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>불안</Text>
+            <View style={styles.scoreButtonsContainer}>
+              {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((score) => (
+                <TouchableOpacity
+                  key={score}
+                  style={[
+                    styles.circleButton,
+                    { backgroundColor: getScoreColor(score) },
+                    convertToDisplay(anxiety) === score &&
+                      styles.circleButtonSelected,
+                  ]}
+                  onPress={() => handleScorePress("anxiety", setAnxiety, score)}
+                >
+                  <Text style={styles.circleButtonText}>{score}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-      {/* 긴장/흥분 점수 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>긴장/흥분: {convertToDisplay(tension)}</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={8}
-          step={1}
-          value={tension}
-          onValueChange={setTension}
-          minimumTrackTintColor={Colors.light.primary}
-          maximumTrackTintColor={Colors.light.border}
-          thumbTintColor={Colors.light.primary}
-        />
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabelText}>-4</Text>
-          <Text style={styles.sliderLabelText}>0</Text>
-          <Text style={styles.sliderLabelText}>4</Text>
-        </View>
-      </View>
+          {/* 긴장/흥분 점수 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>긴장/흥분</Text>
+            <View style={styles.scoreButtonsContainer}>
+              {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((score) => (
+                <TouchableOpacity
+                  key={score}
+                  style={[
+                    styles.circleButton,
+                    { backgroundColor: getScoreColor(score) },
+                    convertToDisplay(tension) === score &&
+                      styles.circleButtonSelected,
+                  ]}
+                  onPress={() => handleScorePress("tension", setTension, score)}
+                >
+                  <Text style={styles.circleButtonText}>{score}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-      {/* 짜증/분노 점수 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>짜증/분노: {convertToDisplay(anger)}</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={8}
-          step={1}
-          value={anger}
-          onValueChange={setAnger}
-          minimumTrackTintColor={Colors.light.primary}
-          maximumTrackTintColor={Colors.light.border}
-          thumbTintColor={Colors.light.primary}
-        />
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabelText}>-4</Text>
-          <Text style={styles.sliderLabelText}>0</Text>
-          <Text style={styles.sliderLabelText}>4</Text>
-        </View>
-      </View>
+          {/* 짜증/분노 점수 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>짜증/분노</Text>
+            <View style={styles.scoreButtonsContainer}>
+              {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((score) => (
+                <TouchableOpacity
+                  key={score}
+                  style={[
+                    styles.circleButton,
+                    { backgroundColor: getScoreColor(score) },
+                    convertToDisplay(anger) === score &&
+                      styles.circleButtonSelected,
+                  ]}
+                  onPress={() => handleScorePress("anger", setAnger, score)}
+                >
+                  <Text style={styles.circleButtonText}>{score}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-      {/* 관심/흥미 점수 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>
-          관심/흥미: {convertToDisplay(interest)}
-        </Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={8}
-          step={1}
-          value={interest}
-          onValueChange={setInterest}
-          minimumTrackTintColor={Colors.light.primary}
-          maximumTrackTintColor={Colors.light.border}
-          thumbTintColor={Colors.light.primary}
-        />
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabelText}>-4</Text>
-          <Text style={styles.sliderLabelText}>0</Text>
-          <Text style={styles.sliderLabelText}>4</Text>
-        </View>
-      </View>
+          {/* 관심/흥미 점수 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>관심/흥미</Text>
+            <View style={styles.scoreButtonsContainer}>
+              {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((score) => (
+                <TouchableOpacity
+                  key={score}
+                  style={[
+                    styles.circleButton,
+                    { backgroundColor: getScoreColor(score) },
+                    convertToDisplay(interest) === score &&
+                      styles.circleButtonSelected,
+                  ]}
+                  onPress={() =>
+                    handleScorePress("interest", setInterest, score)
+                  }
+                >
+                  <Text style={styles.circleButtonText}>{score}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-      {/* 활동량 점수 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>활동량: {convertToDisplay(activity)}</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={8}
-          step={1}
-          value={activity}
-          onValueChange={setActivity}
-          minimumTrackTintColor={Colors.light.primary}
-          maximumTrackTintColor={Colors.light.border}
-          thumbTintColor={Colors.light.primary}
-        />
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabelText}>-4</Text>
-          <Text style={styles.sliderLabelText}>0</Text>
-          <Text style={styles.sliderLabelText}>4</Text>
-        </View>
-      </View>
+          {/* 활동량 점수 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>활동량</Text>
+            <View style={styles.scoreButtonsContainer}>
+              {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((score) => (
+                <TouchableOpacity
+                  key={score}
+                  style={[
+                    styles.circleButton,
+                    { backgroundColor: getScoreColor(score) },
+                    convertToDisplay(activity) === score &&
+                      styles.circleButtonSelected,
+                  ]}
+                  onPress={() =>
+                    handleScorePress("activity", setActivity, score)
+                  }
+                >
+                  <Text style={styles.circleButtonText}>{score}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-      {/* 생각의 속도 점수 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>
-          생각의 속도/양: {convertToDisplay(thoughtSpeed)}
-        </Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={8}
-          step={1}
-          value={thoughtSpeed}
-          onValueChange={setThoughtSpeed}
-          minimumTrackTintColor={Colors.light.primary}
-          maximumTrackTintColor={Colors.light.border}
-          thumbTintColor={Colors.light.primary}
-        />
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabelText}>-4</Text>
-          <Text style={styles.sliderLabelText}>0</Text>
-          <Text style={styles.sliderLabelText}>4</Text>
-        </View>
-      </View>
+          {/* 생각의 속도 점수 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>생각의 속도/양</Text>
+            <View style={styles.scoreButtonsContainer}>
+              {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((score) => (
+                <TouchableOpacity
+                  key={score}
+                  style={[
+                    styles.circleButton,
+                    { backgroundColor: getScoreColor(score) },
+                    convertToDisplay(thoughtSpeed) === score &&
+                      styles.circleButtonSelected,
+                  ]}
+                  onPress={() =>
+                    handleScorePress("thoughtSpeed", setThoughtSpeed, score)
+                  }
+                >
+                  <Text style={styles.circleButtonText}>{score}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-      {/* 생각의 내용 점수 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>
-          생각의 내용: {convertToDisplay(thoughtContent)}
-        </Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={8}
-          step={1}
-          value={thoughtContent}
-          onValueChange={setThoughtContent}
-          minimumTrackTintColor={Colors.light.primary}
-          maximumTrackTintColor={Colors.light.border}
-          thumbTintColor={Colors.light.primary}
-        />
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabelText}>-4</Text>
-          <Text style={styles.sliderLabelText}>0</Text>
-          <Text style={styles.sliderLabelText}>4</Text>
-        </View>
-      </View>
+          {/* 생각의 내용 점수 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>생각의 내용</Text>
+            <View style={styles.scoreButtonsContainer}>
+              {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((score) => (
+                <TouchableOpacity
+                  key={score}
+                  style={[
+                    styles.circleButton,
+                    { backgroundColor: getScoreColor(score) },
+                    convertToDisplay(thoughtContent) === score &&
+                      styles.circleButtonSelected,
+                  ]}
+                  onPress={() =>
+                    handleScorePress("thoughtContent", setThoughtContent, score)
+                  }
+                >
+                  <Text style={styles.circleButtonText}>{score}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </>
+      )}
 
-      {/* 수면 시간 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>수면 시간 (시간) *</Text>
-        <TextInput
-          style={styles.input}
-          value={sleepHours}
-          onChangeText={setSleepHours}
-          keyboardType="decimal-pad"
-          placeholder="예: 7 또는 7.5"
-        />
-      </View>
+      {/* 3단계: 나머지 항목들 */}
+      {currentStep === 3 && (
+        <>
+          {/* 수면 시간 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>수면 시간 (시간) *</Text>
+            <TextInput
+              style={styles.input}
+              value={sleepHours}
+              onChangeText={setSleepHours}
+              keyboardType="decimal-pad"
+              placeholder="예: 7 또는 7.5"
+            />
+          </View>
 
-      {/* 체중 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>체중 (kg) - 선택사항</Text>
-        <TextInput
-          style={styles.input}
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="decimal-pad"
-          placeholder="예: 65.5"
-        />
-      </View>
+          {/* 체중 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>체중 (kg) - 선택사항</Text>
+            <TextInput
+              style={styles.input}
+              value={weight}
+              onChangeText={setWeight}
+              keyboardType="decimal-pad"
+              placeholder="예: 65.5"
+            />
+          </View>
 
-      {/* 음주 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>음주 (잔)</Text>
-        <TextInput
-          style={styles.input}
-          value={alcoholAmount}
-          onChangeText={setAlcoholAmount}
-          keyboardType="decimal-pad"
-          placeholder="예: 2 또는 1.5"
-        />
-      </View>
+          {/* 음주 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>음주 (잔)</Text>
+            <TextInput
+              style={styles.input}
+              value={alcoholAmount}
+              onChangeText={setAlcoholAmount}
+              keyboardType="decimal-pad"
+              placeholder="예: 2 또는 1.5"
+            />
+          </View>
 
-      {/* Boolean 항목들 */}
-      <View style={styles.section}>
-        <View style={styles.switchRow}>
-          <Text>생리</Text>
-          <Switch value={hasMenstruation} onValueChange={setHasMenstruation} />
-        </View>
-        <View style={styles.switchRow}>
-          <Text>폭식</Text>
-          <Switch value={hasBingeEating} onValueChange={setHasBingeEating} />
-        </View>
-        <View style={styles.switchRow}>
-          <Text>신체 통증</Text>
-          <Switch value={hasPhysicalPain} onValueChange={setHasPhysicalPain} />
-        </View>
-        <View style={styles.switchRow}>
-          <Text>공황 발작</Text>
-          <Switch value={hasPanicAttack} onValueChange={setHasPanicAttack} />
-        </View>
-        <View style={styles.switchRow}>
-          <Text>울음</Text>
-          <Switch value={hasCrying} onValueChange={setHasCrying} />
-        </View>
-        <View style={styles.switchRow}>
-          <Text>운동</Text>
-          <Switch value={hasExercise} onValueChange={setHasExercise} />
-        </View>
-      </View>
+          {/* Boolean 항목들 */}
+          <View style={styles.section}>
+            <View style={styles.switchRow}>
+              <Text>생리</Text>
+              <Switch
+                value={hasMenstruation}
+                onValueChange={setHasMenstruation}
+              />
+            </View>
+            <View style={styles.switchRow}>
+              <Text>폭식</Text>
+              <Switch
+                value={hasBingeEating}
+                onValueChange={setHasBingeEating}
+              />
+            </View>
+            <View style={styles.switchRow}>
+              <Text>신체 통증</Text>
+              <Switch
+                value={hasPhysicalPain}
+                onValueChange={setHasPhysicalPain}
+              />
+            </View>
+            <View style={styles.switchRow}>
+              <Text>공황 발작</Text>
+              <Switch
+                value={hasPanicAttack}
+                onValueChange={setHasPanicAttack}
+              />
+            </View>
+            <View style={styles.switchRow}>
+              <Text>울음</Text>
+              <Switch value={hasCrying} onValueChange={setHasCrying} />
+            </View>
+            <View style={styles.switchRow}>
+              <Text>운동</Text>
+              <Switch value={hasExercise} onValueChange={setHasExercise} />
+            </View>
+          </View>
 
-      {/* 메모 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>메모 (선택사항)</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="특이사항을 기록하세요"
-          multiline
-          numberOfLines={4}
-        />
-      </View>
+          {/* 메모 */}
+          <View style={styles.section}>
+            <Text style={styles.label}>메모 (선택사항)</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="특이사항을 기록하세요"
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+        </>
+      )}
 
-      {/* 저장 버튼 */}
-      <TouchableOpacity
-        style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-        onPress={handleSave}
-        disabled={loading}
-      >
-        <Text style={styles.saveButtonText}>
-          {loading ? "저장 중..." : "저장하기"}
-        </Text>
-      </TouchableOpacity>
+      {/* 네비게이션 버튼 */}
+      <View style={styles.navigationButtons}>
+        {currentStep > 1 && (
+          <TouchableOpacity style={styles.navButton} onPress={handlePrevious}>
+            <Text style={styles.navButtonText}>이전</Text>
+          </TouchableOpacity>
+        )}
+
+        {currentStep < 3 && (
+          <TouchableOpacity
+            style={[styles.navButton, styles.navButtonPrimary]}
+            onPress={handleNext}
+          >
+            <Text style={styles.navButtonPrimaryText}>다음</Text>
+          </TouchableOpacity>
+        )}
+
+        {currentStep === 3 && (
+          <TouchableOpacity
+            style={[
+              styles.navButton,
+              styles.navButtonPrimary,
+              loading && styles.saveButtonDisabled,
+            ]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            <Text style={styles.navButtonPrimaryText}>
+              {loading ? "저장 중..." : "저장하기"}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -432,16 +564,41 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.surface,
     padding: 20,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: Colors.light.text,
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 4,
     color: Colors.light.text,
   },
   date: {
     fontSize: 16,
     color: Colors.light.textSecondary,
+  },
+  stepIndicator: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
     marginBottom: 24,
+    textAlign: "center",
+    fontWeight: "600",
   },
   section: {
     marginBottom: 24,
@@ -526,5 +683,57 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  navigationButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 40,
+  },
+  navButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  navButtonPrimary: {
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
+  },
+  navButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.text,
+  },
+  navButtonPrimaryText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  scoreButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 4,
+  },
+  circleButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  circleButtonSelected: {
+    borderColor: Colors.light.text,
+    borderWidth: 3,
+  },
+  circleButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#fff",
   },
 });
