@@ -12,13 +12,12 @@ const generateNovemberData = (userId: string) => {
   const data = [];
 
   for (let day = 1; day <= 30; day++) {
-    const date = `2024-11-${String(day).padStart(2, '0')}`;
+    const date = `2024-11-${String(day).padStart(2, "0")}`;
 
     let record: any = {
       user_id: userId,
       record_date: date,
       anxiety_score: 4 + Math.floor(Math.random() * 5) - 2, // 2-6
-      tension_score: 4 + Math.floor(Math.random() * 5) - 2,
       anger_score: 4 + Math.floor(Math.random() * 5) - 2,
       interest_score: 4 + Math.floor(Math.random() * 5) - 2,
       activity_score: 4 + Math.floor(Math.random() * 5) - 2,
@@ -40,7 +39,6 @@ const generateNovemberData = (userId: string) => {
     if (day <= 7) {
       // 1주차: 경조증 상태
       record.mood_up_score = 2 + Math.floor(Math.random() * 2); // 2-3
-      record.tension_score = 6 + Math.floor(Math.random() * 2); // 6-7
       record.activity_score = 6 + Math.floor(Math.random() * 2);
       record.thought_speed_score = 6 + Math.floor(Math.random() * 2);
       record.sleep_hours = 4 + Math.random() * 2; // 4-6시간
@@ -69,7 +67,6 @@ const generateNovemberData = (userId: string) => {
     } else if (day <= 25) {
       // 4주차 초반: 다시 조증 시작
       record.mood_up_score = 3 + Math.floor(Math.random() * 2); // 3-4
-      record.tension_score = 7 + Math.floor(Math.random() * 2);
       record.activity_score = 7 + Math.floor(Math.random() * 2);
       record.thought_speed_score = 7 + Math.floor(Math.random() * 2);
       record.sleep_hours = 3 + Math.random() * 2; // 3-5시간
@@ -92,7 +89,10 @@ const generateNovemberData = (userId: string) => {
 async function seedData() {
   try {
     // 현재 로그인된 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       console.error("로그인된 사용자가 없습니다. 먼저 로그인해주세요.");
@@ -128,8 +128,9 @@ async function seedData() {
     }
 
     console.log("✅ 11월 데이터 30일 생성 완료!");
-    console.log("패턴: 1주차(조증) → 2주차 초반(혼재) → 2-3주차(우울) → 3주차 후반(안정) → 4주차(조증→혼재)");
-
+    console.log(
+      "패턴: 1주차(조증) → 2주차 초반(혼재) → 2-3주차(우울) → 3주차 후반(안정) → 4주차(조증→혼재)"
+    );
   } catch (error) {
     console.error("오류 발생:", error);
     process.exit(1);

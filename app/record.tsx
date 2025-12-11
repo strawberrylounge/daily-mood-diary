@@ -135,22 +135,6 @@ const scoreGuides: { [key: string]: ScoreGuide } = {
       },
     ],
   },
-  // tension: {
-  //   title: "긴장/흥분 평가 기준",
-  //   subtitle: "정서 반응",
-  //   subtitleDescription: "여기에 정서 반응에 대한 추가 설명을 입력하세요",
-  //   table: [
-  //     { score: -4, description: "여기에 -4점 기준을 입력하세요" },
-  //     { score: -3, description: "여기에 -3점 기준을 입력하세요" },
-  //     { score: -2, description: "여기에 -2점 기준을 입력하세요" },
-  //     { score: -1, description: "여기에 -1점 기준을 입력하세요" },
-  //     { score: 0, description: "여기에 0점 기준을 입력하세요" },
-  //     { score: 1, description: "여기에 1점 기준을 입력하세요" },
-  //     { score: 2, description: "여기에 2점 기준을 입력하세요" },
-  //     { score: 3, description: "여기에 3점 기준을 입력하세요" },
-  //     { score: 4, description: "여기에 4점 기준을 입력하세요" },
-  //   ],
-  // },
   anger: {
     title: "짜증/분노 평가 기준",
     subtitle: "정서 반응",
@@ -358,7 +342,6 @@ export default function RecordScreen() {
   const [selectedMoods, setSelectedMoods] = useState<number[]>([]);
   // 음수를 처리 하지 못하는 라이브러리 버그로 0이 -4, 8이 4
   const [anxiety, setAnxiety] = useState();
-  const [tension, setTension] = useState();
   const [anger, setAnger] = useState();
   const [interest, setInterest] = useState();
   const [activity, setActivity] = useState();
@@ -380,7 +363,6 @@ export default function RecordScreen() {
   // 2단계 항목들의 입력 여부 추적
   const [touchedFields, setTouchedFields] = useState({
     anxiety: false,
-    tension: false,
     anger: false,
     interest: false,
     activity: false,
@@ -511,7 +493,6 @@ export default function RecordScreen() {
         mood_up_score: moodUpValues.length > 0 ? moodUpValues[0] : null,
         mood_down_score: moodDownValues.length > 0 ? moodDownValues[0] : null,
         anxiety_score: convertFromDisplay(anxiety),
-        tension_score: convertFromDisplay(tension),
         anger_score: convertFromDisplay(anger),
         interest_score: convertFromDisplay(interest),
         activity_score: convertFromDisplay(activity),
@@ -534,7 +515,9 @@ export default function RecordScreen() {
 
       const { data, error } = await supabase
         .from("daily_records")
-        .insert(payload);
+        .insert(payload, {
+          onConflict: "user_id,record_date",
+        });
 
       if (error) {
         console.log("에러 상세:", error); // 에러 상세 확인
@@ -635,35 +618,6 @@ export default function RecordScreen() {
               ))}
             </View>
           </View>
-
-          {/* 긴장/흥분 점수 */}
-          {/* <View style={styles.section}>
-            <View style={styles.labelContainer}>
-              <Text style={styles.label}>긴장/흥분</Text>
-              <TouchableOpacity
-                style={styles.guideIcon}
-                onPress={() => openGuideModal("tension")}
-              >
-                <Text style={styles.guideIconText}>ⓘ</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.scoreButtonsContainer}>
-              {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((score) => (
-                <TouchableOpacity
-                  key={score}
-                  style={[
-                    styles.circleButton,
-                    { backgroundColor: getScoreColor(score) },
-                    convertToDisplay(tension) === score &&
-                      styles.circleButtonSelected,
-                  ]}
-                  onPress={() => handleScorePress("tension", setTension, score)}
-                >
-                  <Text style={styles.circleButtonText}>{score}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View> */}
 
           {/* 짜증/분노 점수 */}
           <View style={styles.section}>

@@ -32,13 +32,12 @@ function generateNovemberData(userId) {
   const data = [];
 
   for (let day = 1; day <= 30; day++) {
-    const date = `2024-11-${String(day).padStart(2, '0')}`;
+    const date = `2025-11-${String(day).padStart(2, '0')}`;
 
     let record = {
       user_id: userId,
       record_date: date,
       anxiety_score: 4 + Math.floor(Math.random() * 5) - 2, // 2-6
-      tension_score: 4 + Math.floor(Math.random() * 5) - 2,
       anger_score: 4 + Math.floor(Math.random() * 5) - 2,
       interest_score: 4 + Math.floor(Math.random() * 5) - 2,
       activity_score: 4 + Math.floor(Math.random() * 5) - 2,
@@ -60,7 +59,6 @@ function generateNovemberData(userId) {
     if (day <= 7) {
       // 1주차: 경조증 상태
       record.mood_up_score = 2 + Math.floor(Math.random() * 2); // 2-3
-      record.tension_score = 6 + Math.floor(Math.random() * 2); // 6-7
       record.activity_score = 6 + Math.floor(Math.random() * 2);
       record.thought_speed_score = 6 + Math.floor(Math.random() * 2);
       record.sleep_hours = 4 + Math.random() * 2; // 4-6시간
@@ -89,7 +87,6 @@ function generateNovemberData(userId) {
     } else if (day <= 25) {
       // 4주차 초반: 다시 조증 시작
       record.mood_up_score = 3 + Math.floor(Math.random() * 2); // 3-4
-      record.tension_score = 7 + Math.floor(Math.random() * 2);
       record.activity_score = 7 + Math.floor(Math.random() * 2);
       record.thought_speed_score = 7 + Math.floor(Math.random() * 2);
       record.sleep_hours = 3 + Math.random() * 2; // 3-5시간
@@ -136,8 +133,8 @@ async function seedData() {
       .from("daily_records")
       .delete()
       .eq("user_id", user.id)
-      .gte("record_date", "2024-11-01")
-      .lte("record_date", "2024-11-30");
+      .gte("record_date", "2025-11-01")
+      .lte("record_date", "2025-11-30");
 
     if (deleteError) {
       console.warn("⚠️  기존 데이터 삭제 중 오류:", deleteError.message);

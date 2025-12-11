@@ -5,7 +5,6 @@ export type DailyRecord = {
   mood_up_score?: number; // 0~4
   mood_down_score?: number; // -4~-1
   anxiety_score: number; // -4~4
-  tension_score: number;
   anger_score: number;
   interest_score: number;
   activity_score: number;

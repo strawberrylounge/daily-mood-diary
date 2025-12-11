@@ -16,7 +16,6 @@ interface MonthlyStats {
   avgMoodUp: number | null;
   avgMoodDown: number | null;
   avgAnxiety: number;
-  avgTension: number;
   avgAnger: number;
   avgInterest: number;
   avgActivity: number;
@@ -134,8 +133,6 @@ export default function StatsScreen() {
                 : null,
             avgAnxiety:
               records.reduce((sum, r) => sum + r.anxiety_score, 0) / count,
-            avgTension:
-              records.reduce((sum, r) => sum + r.tension_score, 0) / count,
             avgAnger:
               records.reduce((sum, r) => sum + r.anger_score, 0) / count,
             avgInterest:
@@ -334,12 +331,6 @@ export default function StatsScreen() {
                 <Text style={styles.statLabel}>불안</Text>
                 <Text style={styles.statValue}>
                   {convertToDisplay(stat.avgAnxiety).toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>긴장/흥분</Text>
-                <Text style={styles.statValue}>
-                  {convertToDisplay(stat.avgTension).toFixed(1)}
                 </Text>
               </View>
               <View style={styles.statItem}>

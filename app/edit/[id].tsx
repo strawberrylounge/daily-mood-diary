@@ -14,8 +14,8 @@ import {
 } from "react-native";
 import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
-import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 // ========================================
 // 웹 호환 코드 (나중에 삭제 예정)
@@ -49,7 +49,6 @@ export default function EditScreen() {
   const [selectedMoods, setSelectedMoods] = useState<number[]>([]);
   // 음수를 처리 하지 못하는 라이브러리 버그로 0이 -4, 8이 4
   const [anxiety, setAnxiety] = useState(4);
-  const [tension, setTension] = useState(4);
   const [anger, setAnger] = useState(4);
   const [interest, setInterest] = useState(4);
   const [activity, setActivity] = useState(4);
@@ -118,7 +117,6 @@ export default function EditScreen() {
       setSelectedMoods(moods);
 
       setAnxiety(data.anxiety_score);
-      setTension(data.tension_score);
       setAnger(data.anger_score);
       setInterest(data.interest_score);
       setActivity(data.activity_score);
@@ -169,7 +167,6 @@ export default function EditScreen() {
           mood_up_score: moodUpValues.length > 0 ? moodUpValues[0] : null,
           mood_down_score: moodDownValues.length > 0 ? moodDownValues[0] : null,
           anxiety_score: convertFromDisplay(anxiety),
-          tension_score: convertFromDisplay(tension),
           anger_score: convertFromDisplay(anger),
           interest_score: convertFromDisplay(interest),
           activity_score: convertFromDisplay(activity),
@@ -271,13 +268,6 @@ export default function EditScreen() {
             <Text style={styles.readOnlyLabel}>불안</Text>
             <Text style={styles.readOnlyValue}>
               {convertToDisplay(anxiety)}
-            </Text>
-          </View>
-
-          <View style={styles.readOnlySection}>
-            <Text style={styles.readOnlyLabel}>긴장/흥분</Text>
-            <Text style={styles.readOnlyValue}>
-              {convertToDisplay(tension)}
             </Text>
           </View>
 
@@ -420,27 +410,6 @@ export default function EditScreen() {
           step={1}
           value={anxiety}
           onValueChange={setAnxiety}
-          minimumTrackTintColor={Colors.light.primary}
-          maximumTrackTintColor={Colors.light.border}
-          thumbTintColor={Colors.light.primary}
-        />
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabelText}>-4</Text>
-          <Text style={styles.sliderLabelText}>0</Text>
-          <Text style={styles.sliderLabelText}>4</Text>
-        </View>
-      </View>
-
-      {/* 긴장/흥분 점수 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>긴장/흥분: {convertToDisplay(tension)}</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={8}
-          step={1}
-          value={tension}
-          onValueChange={setTension}
           minimumTrackTintColor={Colors.light.primary}
           maximumTrackTintColor={Colors.light.border}
           thumbTintColor={Colors.light.primary}
