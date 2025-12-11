@@ -248,7 +248,7 @@ const scoreGuides: { [key: string]: ScoreGuide } = {
         description: "평소보다 크게 감소하여 활동량이 매우 적은 정도.",
       },
       { score: -2, description: "평소보다 확연히 감소함." },
-      { score: -1, description: "평소보다 조금 감소." },
+      { score: -1, description: "평소보다 조금 감소함." },
       {
         score: 0,
         description: "평소 편안할 때의 모습과 가장 가까운 정도를 0으로 함.",
@@ -270,33 +270,73 @@ const scoreGuides: { [key: string]: ScoreGuide } = {
   thoughtSpeed: {
     title: "생각의 속도와 양 평가 기준",
     subtitle: "생각",
-    subtitleDescription: "여기에 생각에 대한 추가 설명을 입력하세요",
+    subtitleDescription:
+      "+: 생각이 빨라지고 꼬리에 꼬리를 물고 이어짐, 많은 아이디어가 떠오르거나 생각에 골몰함. 때로는 말수가 많아지거나 글을 많이 쓰게 됨.<br />-: 생각이 느려지고 떠오르지 않음. 말을 하는 것도 쉽지 않고, 떠오르는 것이 적음.",
     table: [
-      { score: -4, description: "여기에 -4점 기준을 입력하세요" },
-      { score: -3, description: "여기에 -3점 기준을 입력하세요" },
-      { score: -2, description: "여기에 -2점 기준을 입력하세요" },
-      { score: -1, description: "여기에 -1점 기준을 입력하세요" },
-      { score: 0, description: "여기에 0점 기준을 입력하세요" },
-      { score: 1, description: "여기에 1점 기준을 입력하세요" },
-      { score: 2, description: "여기에 2점 기준을 입력하세요" },
-      { score: 3, description: "여기에 3점 기준을 입력하세요" },
-      { score: 4, description: "여기에 4점 기준을 입력하세요" },
+      {
+        score: -4,
+        description:
+          "매우 크게 감소하여 의사소통이 불가능하고 거의 생각이 없는 정도.",
+      },
+      {
+        score: -3,
+        description:
+          "평소보다 크게 감소하여 다른 사람이 보기에 느리고 답답하게 느껴짐.",
+      },
+      { score: -2, description: "평소보다 확연히 감소함." },
+      { score: -1, description: "평소보다 조금 감소함." },
+      {
+        score: 0,
+        description: "평소 편안할 때의 모습과 가장 가까운 정도를 0으로 함.",
+      },
+      { score: 1, description: "평소보다 조금 증가함." },
+      { score: 2, description: "평소보다 확연히 증가함." },
+      {
+        score: 3,
+        description:
+          "평소보다 크게 증가하여 다른 사람이 듣는다면 따라잡기 어려움.",
+      },
+      {
+        score: 4,
+        description:
+          "매우 크게 증가하여 자기 자신도 따라가기 어렵고 혼란스러움.",
+      },
     ],
   },
   thoughtContent: {
     title: "생각의 내용 평가 기준",
     subtitle: "생각",
-    subtitleDescription: "여기에 생각에 대한 추가 설명을 입력하세요",
+    subtitleDescription:
+      "+: 평소보다 낙관적임. 무엇이든 잘될 것 같은 생각이 들고 자신감이 생김. 심한 경우 자신이 특별하다는 생각이 듦.<br />-: 평소보다 부정적임. 무엇이든 잘되지 않을 것 같고, 자신감이 떨어짐. 심한 경우 죄책감이나 죽고 싶은 생각이 듦.",
     table: [
-      { score: -4, description: "여기에 -4점 기준을 입력하세요" },
-      { score: -3, description: "여기에 -3점 기준을 입력하세요" },
-      { score: -2, description: "여기에 -2점 기준을 입력하세요" },
-      { score: -1, description: "여기에 -1점 기준을 입력하세요" },
-      { score: 0, description: "여기에 0점 기준을 입력하세요" },
-      { score: 1, description: "여기에 1점 기준을 입력하세요" },
-      { score: 2, description: "여기에 2점 기준을 입력하세요" },
-      { score: 3, description: "여기에 3점 기준을 입력하세요" },
-      { score: 4, description: "여기에 4점 기준을 입력하세요" },
+      {
+        score: -4,
+        description:
+          "매우 부정적이어서 모든 일이 잘되지 않고, 삶의 의미가 없고, 무능력하다고 생각.",
+      },
+      {
+        score: -3,
+        description:
+          "평소보다 크게 부정적인 생각이 늘어나 다른 사람들이 듣는다면 지나치다고 생각할 정도.",
+      },
+      { score: -2, description: "평소보다 확연히 부정적인 생각을 많이 함." },
+      { score: -1, description: "평소보다 조금 부정적인 생각을 많이 함." },
+      {
+        score: 0,
+        description: "평소 편안할 때의 모습과 가장 가까운 정도를 0으로 함.",
+      },
+      { score: 1, description: "평소보다 조금 긍정적인 생각을 많이 함." },
+      { score: 2, description: "평소보다 확연히 긍정적인 생각을 많이 함." },
+      {
+        score: 3,
+        description:
+          "평소보다 크게 긍정적인 생각이 늘어나 다른 사람들이 듣는다면 지나치다고 생각할 정도.",
+      },
+      {
+        score: 4,
+        description:
+          "매우 긍정적이어서 모든 일이 잘되고, 자신이 특별하고, 능력이 있다고 생각.",
+      },
     ],
   },
 };
