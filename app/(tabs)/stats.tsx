@@ -179,38 +179,110 @@ export default function StatsScreen() {
       return `${date.getMonth() + 1}/${date.getDate()}`;
     });
 
-    // mood_up_score와 mood_down_score를 별도로 처리
-    const moodUpData = recentRecords.map((record) =>
-      record.mood_up_score !== null && record.mood_up_score !== undefined
-        ? record.mood_up_score
-        : null
-    );
+    // 각 레코드의 기분 값 (mood_up 또는 mood_down 중 하나)
+    const moodValues = recentRecords.map((record) => {
+      if (record.mood_up_score !== null && record.mood_up_score !== undefined) {
+        return record.mood_up_score;
+      } else if (
+        record.mood_down_score !== null &&
+        record.mood_down_score !== undefined
+      ) {
+        return record.mood_down_score;
+      }
+      return null;
+    });
 
-    const moodDownData = recentRecords.map((record) =>
-      record.mood_down_score !== null && record.mood_down_score !== undefined
-        ? record.mood_down_score
-        : null
-    );
-
-    // 데이터셋 생성 (null이 아닌 데이터가 있는 경우만 포함)
+    // 연속된 양수/음수 구간별로 dataset 생성
     const datasets = [];
+    let currentSegment: (number | null)[] = [];
+    let currentType: "positive" | "negative" | null = null;
+    let hasMoodUp = false;
+    let hasMoodDown = false;
 
-    const hasMoodUp = moodUpData.some((v) => v !== null);
-    const hasMoodDown = moodDownData.some((v) => v !== null);
+    for (let i = 0; i < moodValues.length; i++) {
+      const value = moodValues[i];
 
-    if (hasMoodUp) {
+      if (value === null) {
+        // null 값은 구간을 끊음
+        if (currentSegment.length > 0) {
+          datasets.push({
+            data: currentSegment,
+            color:
+              currentType === "positive"
+                ? (opacity = 1) => `rgba(122, 158, 126, ${opacity})` // 초록색 (조증)
+                : (opacity = 1) => `rgba(192, 112, 96, ${opacity})`, // 빨간색 (우울)
+            strokeWidth: 3,
+          });
+          currentSegment = [];
+          currentType = null;
+        }
+        // null 구간을 위한 빈 값 추가
+        currentSegment.push(null);
+      } else {
+        const type = value >= 0 ? "positive" : "negative";
+
+        if (type === "positive") hasMoodUp = true;
+        if (type === "negative") hasMoodDown = true;
+
+        if (currentType === null) {
+          // 새 구간 시작
+          currentType = type;
+          // 이전에 null이 있었다면 연결을 위해 추가
+          if (currentSegment.length > 0) {
+            currentSegment.push(value);
+            datasets.push({
+              data: currentSegment,
+              color:
+                currentType === "positive"
+                  ? (opacity = 1) => `rgba(122, 158, 126, ${opacity})`
+                  : (opacity = 1) => `rgba(192, 112, 96, ${opacity})`,
+              strokeWidth: 3,
+            });
+            currentSegment = [];
+          }
+          currentSegment.push(value);
+        } else if (currentType === type) {
+          // 같은 타입이면 계속 추가
+          currentSegment.push(value);
+        } else {
+          // 타입이 바뀌면 이전 구간 저장하고 새 구간 시작
+          // 연결을 위해 현재 값을 이전 구간에도 추가
+          currentSegment.push(value);
+          datasets.push({
+            data: currentSegment,
+            color:
+              currentType === "positive"
+                ? (opacity = 1) => `rgba(122, 158, 126, ${opacity})`
+                : (opacity = 1) => `rgba(192, 112, 96, ${opacity})`,
+            strokeWidth: 3,
+          });
+          // 새 구간 시작 (현재 값으로 시작)
+          currentSegment = [value];
+          currentType = type;
+        }
+      }
+    }
+
+    // 마지막 구간 추가
+    if (currentSegment.length > 0 && currentType !== null) {
       datasets.push({
-        data: moodUpData.map((v) => v ?? 0), // null을 0으로 변환 (차트 렌더링용)
-        color: (opacity = 1) => `rgba(255, 107, 107, ${opacity})`, // 빨간색 (조증)
-        strokeWidth: 2,
+        data: currentSegment,
+        color:
+          currentType === "positive"
+            ? (opacity = 1) => `rgba(122, 158, 126, ${opacity})`
+            : (opacity = 1) => `rgba(192, 112, 96, ${opacity})`,
+        strokeWidth: 3,
       });
     }
 
-    if (hasMoodDown) {
-      datasets.push({
-        data: moodDownData.map((v) => v ?? 0), // null을 0으로 변환
-        color: (opacity = 1) => `rgba(78, 121, 167, ${opacity})`, // 파란색 (우울)
-        strokeWidth: 2,
+    // 모든 데이터를 포함하는 전체 배열 (차트의 x축 범위 설정용)
+    const fullData = moodValues.map((v) => v ?? 0);
+    if (datasets.length > 0) {
+      datasets.unshift({
+        data: fullData,
+        color: (opacity = 1) => `rgba(0, 0, 0, 0)`, // 투명
+        strokeWidth: 0,
+        withDots: false,
       });
     }
 
@@ -271,7 +343,7 @@ export default function StatsScreen() {
                 <View
                   style={[
                     styles.legendColor,
-                    { backgroundColor: "rgba(255, 107, 107, 1)" },
+                    { backgroundColor: "rgba(122, 158, 126, 1)" },
                   ]}
                 />
                 <Text style={styles.legendText}>기분 Up (조증)</Text>
@@ -282,7 +354,7 @@ export default function StatsScreen() {
                 <View
                   style={[
                     styles.legendColor,
-                    { backgroundColor: "rgba(78, 121, 167, 1)" },
+                    { backgroundColor: "rgba(192, 112, 96, 1)" },
                   ]}
                 />
                 <Text style={styles.legendText}>기분 Down (우울)</Text>
@@ -290,7 +362,7 @@ export default function StatsScreen() {
             )}
           </View>
           <Text style={styles.chartNote}>
-            * 혼재 상태(조증+우울)는 두 선이 모두 표시됩니다
+            * 하나의 연속된 라인으로 표시되며, 색상은 양수/음수에 따라 구분됩니다
           </Text>
         </View>
       ) : (
