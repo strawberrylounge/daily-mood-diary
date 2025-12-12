@@ -1,4 +1,4 @@
-import { router, useRouter, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
@@ -51,9 +51,6 @@ export default function Index() {
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-      console.log("📅 Fetching records for user:", user.id);
-      console.log("📅 Date filter (3 months ago):", threeMonthsAgo.toISOString().split("T")[0]);
-
       const { data, error } = await supabase
         .from("daily_records")
         .select("record_date, id, user_id")
@@ -62,9 +59,6 @@ export default function Index() {
         .order("record_date", { ascending: false });
 
       if (error) throw error;
-
-      console.log("📅 Fetched records count:", data?.length || 0);
-      console.log("📅 Fetched records:", data);
 
       // 기록 있는 날짜를 객체로 변환
       const marked: { [key: string]: any } = {};
@@ -76,7 +70,6 @@ export default function Index() {
         };
       });
 
-      console.log("📅 Marked dates:", Object.keys(marked));
       setRecordedDates(marked);
     } catch (error) {
       console.error("Error fetching dates:", error);
