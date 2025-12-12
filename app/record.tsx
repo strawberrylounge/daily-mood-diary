@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -6,7 +7,6 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -821,41 +821,121 @@ export default function RecordScreen() {
 
           {/* Boolean 항목들 */}
           <View style={styles.section}>
-            <View style={styles.switchRow}>
-              <Text>생리</Text>
-              <Switch
-                value={hasMenstruation}
-                onValueChange={setHasMenstruation}
-              />
-            </View>
-            <View style={styles.switchRow}>
-              <Text>폭식</Text>
-              <Switch
-                value={hasBingeEating}
-                onValueChange={setHasBingeEating}
-              />
-            </View>
-            <View style={styles.switchRow}>
-              <Text>신체 통증</Text>
-              <Switch
-                value={hasPhysicalPain}
-                onValueChange={setHasPhysicalPain}
-              />
-            </View>
-            <View style={styles.switchRow}>
-              <Text>공황 발작</Text>
-              <Switch
-                value={hasPanicAttack}
-                onValueChange={setHasPanicAttack}
-              />
-            </View>
-            <View style={styles.switchRow}>
-              <Text>울음</Text>
-              <Switch value={hasCrying} onValueChange={setHasCrying} />
-            </View>
-            <View style={styles.switchRow}>
-              <Text>운동</Text>
-              <Switch value={hasExercise} onValueChange={setHasExercise} />
+            <Text style={styles.label}>특이사항</Text>
+            <View style={styles.iconButtonsContainer}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setHasMenstruation(!hasMenstruation)}
+              >
+                <MaterialCommunityIcons
+                  name="water-circle"
+                  size={40}
+                  color={hasMenstruation ? "#D9A860" : "#BDBDBD"}
+                />
+                <Text
+                  style={[
+                    styles.iconButtonText,
+                    hasMenstruation && styles.iconButtonTextActive,
+                  ]}
+                >
+                  생리
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setHasBingeEating(!hasBingeEating)}
+              >
+                <MaterialCommunityIcons
+                  name="food-variant"
+                  size={40}
+                  color={hasBingeEating ? "#D9A860" : "#BDBDBD"}
+                />
+                <Text
+                  style={[
+                    styles.iconButtonText,
+                    hasBingeEating && styles.iconButtonTextActive,
+                  ]}
+                >
+                  폭식
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setHasPhysicalPain(!hasPhysicalPain)}
+              >
+                <MaterialCommunityIcons
+                  name="bandage"
+                  size={40}
+                  color={hasPhysicalPain ? "#D9A860" : "#BDBDBD"}
+                />
+                <Text
+                  style={[
+                    styles.iconButtonText,
+                    hasPhysicalPain && styles.iconButtonTextActive,
+                  ]}
+                >
+                  신체 통증
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setHasPanicAttack(!hasPanicAttack)}
+              >
+                <MaterialCommunityIcons
+                  name="heart-pulse"
+                  size={40}
+                  color={hasPanicAttack ? "#D9A860" : "#BDBDBD"}
+                />
+                <Text
+                  style={[
+                    styles.iconButtonText,
+                    hasPanicAttack && styles.iconButtonTextActive,
+                  ]}
+                >
+                  공황 발작
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setHasCrying(!hasCrying)}
+              >
+                <MaterialCommunityIcons
+                  name="emoticon-sad-outline"
+                  size={40}
+                  color={hasCrying ? "#D9A860" : "#BDBDBD"}
+                />
+                <Text
+                  style={[
+                    styles.iconButtonText,
+                    hasCrying && styles.iconButtonTextActive,
+                  ]}
+                >
+                  울음
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setHasExercise(!hasExercise)}
+              >
+                <MaterialCommunityIcons
+                  name="run"
+                  size={40}
+                  color={hasExercise ? "#D9A860" : "#BDBDBD"}
+                />
+                <Text
+                  style={[
+                    styles.iconButtonText,
+                    hasExercise && styles.iconButtonTextActive,
+                  ]}
+                >
+                  운동
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -1113,6 +1193,30 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
     textAlignVertical: "top",
+  },
+  iconButtonsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+    justifyContent: "space-around",
+  },
+  iconButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.light.background,
+    minWidth: 100,
+  },
+  iconButtonText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    textAlign: "center",
+  },
+  iconButtonTextActive: {
+    color: Colors.light.text,
+    fontWeight: "600",
   },
   switchRow: {
     flexDirection: "row",
