@@ -336,7 +336,7 @@ export default function EditScreen() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      routerNav.replace("/auth");
+      routerNav.replace("/sign-in");
     }
   }, [user, authLoading]);
   const [saving, setSaving] = useState(false);
