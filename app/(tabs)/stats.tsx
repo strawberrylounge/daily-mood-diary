@@ -6,6 +6,7 @@ import Loading from "../../components/Loading";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import type { MonthlyAssessment } from "../../types/assessment";
 import type { DailyRecord } from "../../types/database";
 
 const screenWidth = Dimensions.get("window").width;
@@ -23,6 +24,13 @@ interface MonthlyStats {
   avgThoughtContent: number;
   avgSleepHours: number;
   avgWeight: number | null;
+  bingeEatingCount: number;
+  physicalPainCount: number;
+  panicAttackCount: number;
+  exerciseCount: number;
+  cryingCount: number;
+  alcoholDays: number;
+  totalScore: number;
 }
 
 export default function StatsScreen() {
@@ -30,6 +38,7 @@ export default function StatsScreen() {
   const router = useRouter();
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
   const [recentRecords, setRecentRecords] = useState<DailyRecord[]>([]);
+  const [assessments, setAssessments] = useState<MonthlyAssessment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,6 +51,7 @@ export default function StatsScreen() {
     if (user?.id) {
       fetchStats();
       fetchRecentRecords();
+      fetchAssessment();
     } else {
       setLoading(false);
     }
@@ -56,8 +66,16 @@ export default function StatsScreen() {
       // 이전 월(11월) 데이터 가져오기
       const now = new Date();
       const targetMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1); // 이전 월 1일
-      const startOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1);
-      const endOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
+      const startOfMonth = new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth(),
+        1
+      );
+      const endOfMonth = new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth() + 1,
+        0
+      );
 
       const { data, error } = await supabase
         .from("daily_records")
@@ -93,6 +111,22 @@ export default function StatsScreen() {
         .order("record_date", { ascending: false });
 
       if (error) throw error;
+
+      // assessments 데이터 가져오기
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from("monthly_assessments")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("assessment_month", { ascending: false });
+
+      if (assessmentError) throw assessmentError;
+
+      // assessment를 월별로 매핑 (YYYY-MM 형식)
+      const assessmentMap = new Map<string, number>();
+      assessmentData?.forEach((assessment) => {
+        const month = assessment.assessment_month.substring(0, 7); // YYYY-MM
+        assessmentMap.set(month, assessment.total_score);
+      });
 
       // 월별로 그룹화
       const groupedByMonth: { [key: string]: DailyRecord[] } = {};
@@ -155,10 +189,41 @@ export default function StatsScreen() {
                 ? weightRecords.reduce((sum, r) => sum + r.weight!, 0) /
                   weightRecords.length
                 : null,
+            bingeEatingCount: records.filter((r) => r.has_binge_eating).length,
+            physicalPainCount: records.filter((r) => r.has_physical_pain)
+              .length,
+            panicAttackCount: records.filter((r) => r.has_panic_attack).length,
+            exerciseCount: records.filter((r) => r.has_exercise).length,
+            cryingCount: records.filter((r) => r.has_crying).length,
+            alcoholDays: records.filter((r) => r.has_alcohol > 0).length,
+            totalScore: assessmentMap.get(month) ?? 0,
           };
         });
 
       setMonthlyStats(stats);
+    } catch (error: any) {
+      console.error("Error fetching stats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAssessment = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("monthly_assessments")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setAssessments(data);
     } catch (error: any) {
       console.error("Error fetching stats:", error);
     } finally {
@@ -178,13 +243,15 @@ export default function StatsScreen() {
 
     // 날짜 순으로 정렬 (오름차순: 과거 → 현재)
     const sortedRecords = [...recentRecords].sort((a, b) => {
-      return new Date(a.record_date).getTime() - new Date(b.record_date).getTime();
+      return (
+        new Date(a.record_date).getTime() - new Date(b.record_date).getTime()
+      );
     });
 
     // 날짜별 라벨 생성 (1일, 15일, 말일만 표시)
     const labels = sortedRecords.map((record) => {
       // YYYY-MM-DD 형식의 문자열을 직접 파싱 (타임존 문제 방지)
-      const [year, month, dayStr] = record.record_date.split('-');
+      const [year, month, dayStr] = record.record_date.split("-");
       const day = parseInt(dayStr, 10);
       const monthNum = parseInt(month, 10);
 
@@ -195,7 +262,7 @@ export default function StatsScreen() {
       if (day === 1 || day === 15 || day === lastDay) {
         return `${monthNum}/${day}`;
       }
-      return ''; // 나머지는 빈 문자열
+      return ""; // 나머지는 빈 문자열
     });
 
     // 각 레코드의 기분 값 (mood_up 또는 mood_down 중 하나)
@@ -227,6 +294,53 @@ export default function StatsScreen() {
   };
 
   const moodChartData = prepareMoodChartData();
+
+  // 증감 계산 함수
+  const calculateChange = (
+    currentValue: number,
+    previousValue: number | undefined
+  ): { change: number; isIncrease: boolean } | null => {
+    if (previousValue === undefined) return null;
+    const change = currentValue - previousValue;
+    return {
+      change: Math.abs(change),
+      isIncrease: change > 0,
+    };
+  };
+
+  // 증감 표시 컴포넌트
+  const renderChangeIndicator = (
+    currentValue: number,
+    previousValue: number | undefined,
+    label: string
+  ) => {
+    const changeData = calculateChange(currentValue, previousValue);
+
+    return (
+      <View style={styles.changeItem}>
+        <Text style={styles.changeLabel}>{label}</Text>
+        <View style={styles.changeValueContainer}>
+          <Text style={styles.changeValue}>{currentValue}일</Text>
+          {changeData && changeData.change > 0 && (
+            <View style={styles.changeIndicator}>
+              <Text
+                style={[
+                  styles.changeArrow,
+                  changeData.isIncrease
+                    ? styles.changeIncrease
+                    : styles.changeDecrease,
+                ]}
+              >
+                {changeData.isIncrease ? "▲" : "▼"}
+              </Text>
+              <Text style={styles.changeDiff}>{changeData.change}</Text>
+            </View>
+          )}
+          {!changeData && <Text style={styles.noComparison}>-</Text>}
+        </View>
+      </View>
+    );
+  };
 
   if (loading) {
     return <Loading message="통계를 불러오는 중..." />;
@@ -289,83 +403,133 @@ export default function StatsScreen() {
       {monthlyStats.length === 0 ? (
         <Text style={styles.empty}>아직 기록이 없습니다.</Text>
       ) : (
-        monthlyStats.map((stat) => (
-          <View key={stat.month} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.monthText}>{formatMonth(stat.month)}</Text>
-              <Text style={styles.countText}>{stat.recordCount}일 기록됨</Text>
-            </View>
+        monthlyStats.map((stat, index) => {
+          // 이전 달 데이터 (증감 비교용)
+          const prevStat = monthlyStats[index + 1];
 
-            <View style={styles.statsGrid}>
-              {stat.avgMoodUp !== null && (
+          return (
+            <View key={stat.month} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.monthText}>{formatMonth(stat.month)}</Text>
+                <Text style={styles.countText}>
+                  {stat.recordCount}일 기록됨
+                </Text>
+              </View>
+
+              {/* 증감 지표 섹션 */}
+              <View style={styles.changeSection}>
+                <Text style={styles.changeSectionTitle}>지난 달 대비 증감</Text>
+                <View style={styles.changeGrid}>
+                  {renderChangeIndicator(
+                    stat.bingeEatingCount,
+                    prevStat?.bingeEatingCount,
+                    "폭식"
+                  )}
+                  {renderChangeIndicator(
+                    stat.physicalPainCount,
+                    prevStat?.physicalPainCount,
+                    "신체 통증"
+                  )}
+                  {renderChangeIndicator(
+                    stat.panicAttackCount,
+                    prevStat?.panicAttackCount,
+                    "공황발작"
+                  )}
+                  {renderChangeIndicator(
+                    stat.exerciseCount,
+                    prevStat?.exerciseCount,
+                    "운동"
+                  )}
+                  {renderChangeIndicator(
+                    stat.cryingCount,
+                    prevStat?.cryingCount,
+                    "울음"
+                  )}
+                  {renderChangeIndicator(
+                    stat.alcoholDays,
+                    prevStat?.alcoholDays,
+                    "음주"
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.statsGrid}>
+                {stat.avgMoodUp !== null && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>기분 Up 평균</Text>
+                    <Text style={styles.statValue}>
+                      {stat.avgMoodUp.toFixed(1)}
+                    </Text>
+                  </View>
+                )}
+                {stat.avgMoodDown !== null && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>기분 Down 평균</Text>
+                    <Text style={styles.statValue}>
+                      {stat.avgMoodDown.toFixed(1)}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>기분 Up 평균</Text>
+                  <Text style={styles.statLabel}>불안</Text>
                   <Text style={styles.statValue}>
-                    {stat.avgMoodUp.toFixed(1)}
+                    {convertToDisplay(stat.avgAnxiety).toFixed(1)}
                   </Text>
                 </View>
-              )}
-              {stat.avgMoodDown !== null && (
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>기분 Down 평균</Text>
+                  <Text style={styles.statLabel}>짜증/분노</Text>
                   <Text style={styles.statValue}>
-                    {stat.avgMoodDown.toFixed(1)}
+                    {convertToDisplay(stat.avgAnger).toFixed(1)}
                   </Text>
                 </View>
-              )}
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>불안</Text>
-                <Text style={styles.statValue}>
-                  {convertToDisplay(stat.avgAnxiety).toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>짜증/분노</Text>
-                <Text style={styles.statValue}>
-                  {convertToDisplay(stat.avgAnger).toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>관심/흥미</Text>
-                <Text style={styles.statValue}>
-                  {convertToDisplay(stat.avgInterest).toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>활동량</Text>
-                <Text style={styles.statValue}>
-                  {convertToDisplay(stat.avgActivity).toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>생각의 속도/양</Text>
-                <Text style={styles.statValue}>
-                  {convertToDisplay(stat.avgThoughtSpeed).toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>생각의 내용</Text>
-                <Text style={styles.statValue}>
-                  {convertToDisplay(stat.avgThoughtContent).toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>수면 시간</Text>
-                <Text style={styles.statValue}>
-                  {stat.avgSleepHours.toFixed(1)}h
-                </Text>
-              </View>
-              {stat.avgWeight !== null && (
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>체중</Text>
+                  <Text style={styles.statLabel}>관심/흥미</Text>
                   <Text style={styles.statValue}>
-                    {stat.avgWeight.toFixed(1)}kg
+                    {convertToDisplay(stat.avgInterest).toFixed(1)}
                   </Text>
                 </View>
-              )}
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>활동량</Text>
+                  <Text style={styles.statValue}>
+                    {convertToDisplay(stat.avgActivity).toFixed(1)}
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>생각의 속도/양</Text>
+                  <Text style={styles.statValue}>
+                    {convertToDisplay(stat.avgThoughtSpeed).toFixed(1)}
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>생각의 내용</Text>
+                  <Text style={styles.statValue}>
+                    {convertToDisplay(stat.avgThoughtContent).toFixed(1)}
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>수면 시간</Text>
+                  <Text style={styles.statValue}>
+                    {stat.avgSleepHours.toFixed(1)}h
+                  </Text>
+                </View>
+                {stat.avgWeight !== null && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>체중</Text>
+                    <Text style={styles.statValue}>
+                      {stat.avgWeight.toFixed(1)}kg
+                    </Text>
+                  </View>
+                )}
+                {stat.totalScore > 0 && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>월말평가 총점</Text>
+                    <Text style={styles.statValue}>{stat.totalScore}점</Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        ))
+          );
+        })
       )}
     </ScrollView>
   );
@@ -493,5 +657,71 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.textSecondary,
     marginTop: 40,
+  },
+  changeSection: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  changeSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.text,
+    marginBottom: 12,
+  },
+  changeGrid: {
+    gap: 8,
+  },
+  changeItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  changeLabel: {
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  changeValueContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  changeValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.light.text,
+    minWidth: 40,
+    textAlign: "right",
+  },
+  changeIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: Colors.light.background,
+    borderRadius: 8,
+  },
+  changeArrow: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  changeIncrease: {
+    color: "#C07060", // 빨간색 (증가)
+  },
+  changeDecrease: {
+    color: "#7A9E7E", // 초록색 (감소)
+  },
+  changeDiff: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.light.textSecondary,
+  },
+  noComparison: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+    fontStyle: "italic",
   },
 });
