@@ -53,15 +53,18 @@ export default function StatsScreen() {
     if (!user?.id) return;
 
     try {
-      // 최근 30일 데이터 가져오기
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // 이전 월(11월) 데이터 가져오기
+      const now = new Date();
+      const targetMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1); // 이전 월 1일
+      const startOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1);
+      const endOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
 
       const { data, error } = await supabase
         .from("daily_records")
         .select("*")
         .eq("user_id", user.id)
-        .gte("record_date", thirtyDaysAgo.toISOString().split("T")[0])
+        .gte("record_date", startOfMonth.toISOString().split("T")[0])
+        .lte("record_date", endOfMonth.toISOString().split("T")[0])
         .order("record_date", { ascending: true });
 
       if (error) throw error;
@@ -173,14 +176,30 @@ export default function StatsScreen() {
       return null;
     }
 
-    // 날짜별 라벨 생성 (MM/DD 형식)
-    const labels = recentRecords.map((record) => {
-      const date = new Date(record.record_date);
-      return `${date.getMonth() + 1}/${date.getDate()}`;
+    // 날짜 순으로 정렬 (오름차순: 과거 → 현재)
+    const sortedRecords = [...recentRecords].sort((a, b) => {
+      return new Date(a.record_date).getTime() - new Date(b.record_date).getTime();
+    });
+
+    // 날짜별 라벨 생성 (1일, 15일, 말일만 표시)
+    const labels = sortedRecords.map((record) => {
+      // YYYY-MM-DD 형식의 문자열을 직접 파싱 (타임존 문제 방지)
+      const [year, month, dayStr] = record.record_date.split('-');
+      const day = parseInt(dayStr, 10);
+      const monthNum = parseInt(month, 10);
+
+      // 말일 계산
+      const lastDay = new Date(parseInt(year, 10), monthNum, 0).getDate();
+
+      // 1일, 15일, 말일만 표시
+      if (day === 1 || day === 15 || day === lastDay) {
+        return `${monthNum}/${day}`;
+      }
+      return ''; // 나머지는 빈 문자열
     });
 
     // 각 레코드의 기분 값 (mood_up 또는 mood_down 중 하나)
-    const moodValues = recentRecords.map((record) => {
+    const moodValues = sortedRecords.map((record) => {
       if (record.mood_up_score !== null && record.mood_up_score !== undefined) {
         return record.mood_up_score;
       } else if (
@@ -189,108 +208,21 @@ export default function StatsScreen() {
       ) {
         return record.mood_down_score;
       }
-      return null;
+      return 0; // null 값은 0으로 처리
     });
 
-    // 연속된 양수/음수 구간별로 dataset 생성
-    const datasets = [];
-    let currentSegment: (number | null)[] = [];
-    let currentType: "positive" | "negative" | null = null;
-    let hasMoodUp = false;
-    let hasMoodDown = false;
-
-    for (let i = 0; i < moodValues.length; i++) {
-      const value = moodValues[i];
-
-      if (value === null) {
-        // null 값은 구간을 끊음
-        if (currentSegment.length > 0) {
-          datasets.push({
-            data: currentSegment,
-            color:
-              currentType === "positive"
-                ? (opacity = 1) => `rgba(122, 158, 126, ${opacity})` // 초록색 (조증)
-                : (opacity = 1) => `rgba(192, 112, 96, ${opacity})`, // 빨간색 (우울)
-            strokeWidth: 3,
-          });
-          currentSegment = [];
-          currentType = null;
-        }
-        // null 구간을 위한 빈 값 추가
-        currentSegment.push(null);
-      } else {
-        const type = value >= 0 ? "positive" : "negative";
-
-        if (type === "positive") hasMoodUp = true;
-        if (type === "negative") hasMoodDown = true;
-
-        if (currentType === null) {
-          // 새 구간 시작
-          currentType = type;
-          // 이전에 null이 있었다면 연결을 위해 추가
-          if (currentSegment.length > 0) {
-            currentSegment.push(value);
-            datasets.push({
-              data: currentSegment,
-              color:
-                currentType === "positive"
-                  ? (opacity = 1) => `rgba(122, 158, 126, ${opacity})`
-                  : (opacity = 1) => `rgba(192, 112, 96, ${opacity})`,
-              strokeWidth: 3,
-            });
-            currentSegment = [];
-          }
-          currentSegment.push(value);
-        } else if (currentType === type) {
-          // 같은 타입이면 계속 추가
-          currentSegment.push(value);
-        } else {
-          // 타입이 바뀌면 이전 구간 저장하고 새 구간 시작
-          // 연결을 위해 현재 값을 이전 구간에도 추가
-          currentSegment.push(value);
-          datasets.push({
-            data: currentSegment,
-            color:
-              currentType === "positive"
-                ? (opacity = 1) => `rgba(122, 158, 126, ${opacity})`
-                : (opacity = 1) => `rgba(192, 112, 96, ${opacity})`,
-            strokeWidth: 3,
-          });
-          // 새 구간 시작 (현재 값으로 시작)
-          currentSegment = [value];
-          currentType = type;
-        }
-      }
-    }
-
-    // 마지막 구간 추가
-    if (currentSegment.length > 0 && currentType !== null) {
-      datasets.push({
-        data: currentSegment,
-        color:
-          currentType === "positive"
-            ? (opacity = 1) => `rgba(122, 158, 126, ${opacity})`
-            : (opacity = 1) => `rgba(192, 112, 96, ${opacity})`,
+    // 1개의 라인으로 표시
+    const datasets = [
+      {
+        data: moodValues,
+        color: (opacity = 1) => `rgba(147, 135, 163, ${opacity})`, // 보라색 단일 라인
         strokeWidth: 3,
-      });
-    }
-
-    // 모든 데이터를 포함하는 전체 배열 (차트의 x축 범위 설정용)
-    const fullData = moodValues.map((v) => v ?? 0);
-    if (datasets.length > 0) {
-      datasets.unshift({
-        data: fullData,
-        color: (opacity = 1) => `rgba(0, 0, 0, 0)`, // 투명
-        strokeWidth: 0,
-        withDots: false,
-      });
-    }
+      },
+    ];
 
     return {
       labels,
       datasets,
-      hasMoodUp,
-      hasMoodDown,
     };
   };
 
@@ -300,10 +232,16 @@ export default function StatsScreen() {
     return <Loading message="통계를 불러오는 중..." />;
   }
 
+  const getChartMonth = () => {
+    const now = new Date();
+    const targetMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${targetMonth.getFullYear()}년 ${targetMonth.getMonth() + 1}월`;
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>기분 추세</Text>
-      <Text style={styles.subtitle}>최근 30일 mood_score 변화</Text>
+      <Text style={styles.subtitle}>{getChartMonth()} mood_score 변화</Text>
 
       {moodChartData && moodChartData.datasets.length > 0 ? (
         <View style={styles.chartContainer}>
@@ -337,36 +275,12 @@ export default function StatsScreen() {
             withHorizontalLines={true}
             segments={4}
           />
-          <View style={styles.legendContainer}>
-            {moodChartData.hasMoodUp && (
-              <View style={styles.legendItem}>
-                <View
-                  style={[
-                    styles.legendColor,
-                    { backgroundColor: "rgba(122, 158, 126, 1)" },
-                  ]}
-                />
-                <Text style={styles.legendText}>기분 Up (조증)</Text>
-              </View>
-            )}
-            {moodChartData.hasMoodDown && (
-              <View style={styles.legendItem}>
-                <View
-                  style={[
-                    styles.legendColor,
-                    { backgroundColor: "rgba(192, 112, 96, 1)" },
-                  ]}
-                />
-                <Text style={styles.legendText}>기분 Down (우울)</Text>
-              </View>
-            )}
-          </View>
           <Text style={styles.chartNote}>
-            * 하나의 연속된 라인으로 표시되며, 색상은 양수/음수에 따라 구분됩니다
+            * {getChartMonth()} 데이터 (1일, 15일, 말일만 라벨 표시)
           </Text>
         </View>
       ) : (
-        <Text style={styles.empty}>최근 30일 기록이 없습니다.</Text>
+        <Text style={styles.empty}>{getChartMonth()} 기록이 없습니다.</Text>
       )}
 
       <Text style={styles.sectionTitle}>월별 통계</Text>
