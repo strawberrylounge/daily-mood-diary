@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
+
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -14,6 +15,7 @@ import {
   View,
 } from "react-native";
 import RenderHTML from "react-native-render-html";
+
 import { Colors } from "../constants/theme";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -556,7 +558,9 @@ export default function RecordScreen() {
               style={styles.guideIcon}
               onPress={() => openGuideModal("mood")}
             >
-              <Text style={styles.guideIconText}>ⓘ</Text>
+              <Text style={styles.guideIconText}>
+                <MaterialCommunityIcons name="information-outline" size={18} />
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={styles.scoreButtonsContainer}>
@@ -1137,7 +1141,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 8,
+    // marginBottom: 8,
     color: Colors.light.text,
   },
   slider: {
